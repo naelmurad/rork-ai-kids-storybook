@@ -26,16 +26,9 @@ export default function LanguageSelector({ selectedLanguage, onLanguageSelect }:
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContainer,
-          selectedLanguage === 'ar' && styles.rtlScrollContainer
-        ]}
-        style={selectedLanguage === 'ar' && styles.rtlScrollView}
+        contentContainerStyle={styles.scrollContainer}
       >
-        <View style={[
-          styles.buttonContainer,
-          selectedLanguage === 'ar' && styles.rtlButtonContainer
-        ]}>
+        <View style={styles.buttonContainer}>
           {languages.map((lang) => (
             <TouchableOpacity
               key={lang.code}
@@ -48,8 +41,7 @@ export default function LanguageSelector({ selectedLanguage, onLanguageSelect }:
             >
               <Text style={[
                 styles.languageText,
-                selectedLanguage === lang.code && styles.selectedLanguageText,
-                selectedLanguage === 'ar' && styles.rtlButtonText
+                selectedLanguage === lang.code && styles.selectedLanguageText
               ]}>
                 {lang.flag} {lang.name}
               </Text>
@@ -74,20 +66,9 @@ const styles = StyleSheet.create({
   scrollContainer: {
     paddingRight: 20,
   },
-  rtlScrollContainer: {
-    flexDirection: 'row-reverse',
-    paddingRight: 0,
-    paddingLeft: 20,
-  },
-  rtlScrollView: {
-    transform: [{ scaleX: -1 }],
-  },
   buttonContainer: {
     flexDirection: 'row',
     gap: 8,
-  },
-  rtlButtonContainer: {
-    transform: [{ scaleX: -1 }],
   },
   languageButton: {
     backgroundColor: '#F8F9FA',
@@ -113,7 +94,5 @@ const styles = StyleSheet.create({
     color: '#4A90E2',
     fontWeight: '600',
   },
-  rtlButtonText: {
-    transform: [{ scaleX: -1 }],
-  },
+
 });
