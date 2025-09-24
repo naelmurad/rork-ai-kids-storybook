@@ -207,14 +207,14 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   title: {
-    fontSize: 32,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#333',
     textAlign: 'center',
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: 9,
     color: '#666',
     textAlign: 'center',
     marginBottom: 32,
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     borderColor: '#4CAF50',
   },
   pricingTitle: {
-    fontSize: 20,
+    fontSize: 10,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 8,
@@ -242,17 +242,17 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   price: {
-    fontSize: 36,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#4CAF50',
   },
   pricePeriod: {
-    fontSize: 18,
+    fontSize: 9,
     color: '#666',
     marginLeft: 4,
   },
   pricingDescription: {
-    fontSize: 12,
+    fontSize: 6,
     color: '#666',
     textAlign: 'center',
     lineHeight: 16,
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   featuresTitle: {
-    fontSize: 20,
+    fontSize: 10,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 16,
@@ -286,13 +286,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   featureTitle: {
-    fontSize: 16,
+    fontSize: 8,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 4,
   },
   featureDescription: {
-    fontSize: 14,
+    fontSize: 7,
     color: '#666',
   },
   comparisonContainer: {
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   comparisonTitle: {
-    fontSize: 18,
+    fontSize: 9,
     fontWeight: 'bold',
     color: '#333',
     textAlign: 'center',
@@ -319,19 +319,19 @@ const styles = StyleSheet.create({
   },
   comparisonFeature: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 7,
     color: '#333',
     fontWeight: '500',
   },
   comparisonFree: {
     width: 60,
-    fontSize: 14,
+    fontSize: 7,
     color: '#666',
     textAlign: 'center',
   },
   comparisonPremium: {
     width: 60,
-    fontSize: 14,
+    fontSize: 7,
     color: '#4CAF50',
     fontWeight: 'bold',
     textAlign: 'center',
@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   upgradeButtonText: {
-    fontSize: 16,
+    fontSize: 8,
     fontWeight: 'bold',
     color: '#FFF',
     flexShrink: 1,
@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   laterButtonText: {
-    fontSize: 16,
+    fontSize: 8,
     color: '#666',
     fontWeight: '600',
   },
