@@ -16,94 +16,32 @@ interface BadgeDef {
 }
 
 const BADGE_DEFS: BadgeDef[] = [
-  // Story Creation Badges
+  // Story Creation Milestones
   { id: 'first_story', titleKey: 'First Story', descriptionKey: 'Complete your first story', requiredStories: 1, icon: '🌟' },
-  { id: 'story_5', titleKey: 'Story Explorer', descriptionKey: 'Create 5 stories', requiredStories: 5, icon: '🗺️' },
-  { id: 'story_10', titleKey: 'Story Hero', descriptionKey: 'Create 10 stories', requiredStories: 10, icon: '🦸' },
-  { id: 'story_25', titleKey: 'Story Master', descriptionKey: 'Create 25 stories', requiredStories: 25, icon: '👑' },
-  { id: 'story_50', titleKey: 'Story Legend', descriptionKey: 'Create 50 stories', requiredStories: 50, icon: '🏆' },
-  { id: 'story_100', titleKey: 'Story Wizard', descriptionKey: 'Create 100 stories', requiredStories: 100, icon: '🧙‍♂️' },
+  { id: 'story_explorer', titleKey: 'Story Explorer', descriptionKey: 'Create 5 stories', requiredStories: 5, icon: '🗺️' },
+  { id: 'story_master', titleKey: 'Story Master', descriptionKey: 'Create 15 stories', requiredStories: 15, icon: '👑' },
+  { id: 'story_legend', titleKey: 'Story Legend', descriptionKey: 'Create 30 stories', requiredStories: 30, icon: '🏆' },
   
-  // Reading Streak Badges
-  { id: 'streak_3', titleKey: '3-Day Streak', descriptionKey: 'Read 3 days in a row', requiredStories: 3, icon: '🔥' },
-  { id: 'streak_7', titleKey: 'Weekly Streak', descriptionKey: 'Read 7 days in a row', requiredStories: 7, icon: '📅' },
-  { id: 'streak_14', titleKey: 'Two Week Warrior', descriptionKey: 'Read 14 days in a row', requiredStories: 14, icon: '⚔️' },
-  { id: 'streak_30', titleKey: 'Monthly Master', descriptionKey: 'Read 30 days in a row', requiredStories: 30, icon: '🌙' },
-  { id: 'streak_60', titleKey: 'Dedication Diamond', descriptionKey: 'Read 60 days in a row', requiredStories: 60, icon: '💎' },
-  { id: 'streak_100', titleKey: 'Century Champion', descriptionKey: 'Read 100 days in a row', requiredStories: 100, icon: '🏅' },
+  // Reading Engagement
+  { id: 'reading_streak', titleKey: 'Reading Streak', descriptionKey: 'Read stories 7 days in a row', requiredStories: 7, icon: '🔥' },
+  { id: 'dedicated_reader', titleKey: 'Dedicated Reader', descriptionKey: 'Read stories 30 days in a row', requiredStories: 30, icon: '📚' },
   
-  // Theme Badges
-  { id: 'adventure_lover', titleKey: 'Adventure Lover', descriptionKey: 'Create 5 adventure stories', requiredStories: 5, icon: '🏔️' },
-  { id: 'fairy_tale_fan', titleKey: 'Fairy Tale Fan', descriptionKey: 'Create 5 fairy tale stories', requiredStories: 5, icon: '🧚‍♀️' },
-  { id: 'space_explorer', titleKey: 'Space Explorer', descriptionKey: 'Create 5 space stories', requiredStories: 5, icon: '🚀' },
-  { id: 'animal_friend', titleKey: 'Animal Friend', descriptionKey: 'Create 5 animal stories', requiredStories: 5, icon: '🐾' },
-  { id: 'mystery_solver', titleKey: 'Mystery Solver', descriptionKey: 'Create 5 mystery stories', requiredStories: 5, icon: '🔍' },
-  { id: 'fantasy_dreamer', titleKey: 'Fantasy Dreamer', descriptionKey: 'Create 5 fantasy stories', requiredStories: 5, icon: '🐉' },
+  // Creative Themes
+  { id: 'adventure_lover', titleKey: 'Adventure Lover', descriptionKey: 'Create 3 adventure stories', requiredStories: 3, icon: '🏔️' },
+  { id: 'fantasy_dreamer', titleKey: 'Fantasy Dreamer', descriptionKey: 'Create 3 fantasy stories', requiredStories: 3, icon: '🐉' },
+  { id: 'space_explorer', titleKey: 'Space Explorer', descriptionKey: 'Create 3 space stories', requiredStories: 3, icon: '🚀' },
   
-  // Special Achievement Badges
+  // Special Achievements
+  { id: 'illustration_artist', titleKey: 'Illustration Artist', descriptionKey: 'Create 5 stories with illustrations', requiredStories: 5, icon: '🎨' },
+  { id: 'polyglot', titleKey: 'Polyglot', descriptionKey: 'Create stories in 3 different languages', requiredStories: 3, icon: '🌍' },
+  { id: 'epic_storyteller', titleKey: 'Epic Storyteller', descriptionKey: 'Create a story with 10+ pages', requiredStories: 1, icon: '📖' },
+  
+  // Time-based
   { id: 'early_bird', titleKey: 'Early Bird', descriptionKey: 'Create a story before 8 AM', requiredStories: 1, icon: '🌅' },
   { id: 'night_owl', titleKey: 'Night Owl', descriptionKey: 'Create a story after 10 PM', requiredStories: 1, icon: '🦉' },
-  { id: 'weekend_warrior', titleKey: 'Weekend Warrior', descriptionKey: 'Create stories on both weekend days', requiredStories: 2, icon: '🎯' },
-  { id: 'speed_reader', titleKey: 'Speed Reader', descriptionKey: 'Read a story in under 5 minutes', requiredStories: 1, icon: '⚡' },
-  { id: 'bookworm', titleKey: 'Bookworm', descriptionKey: 'Read for 30 minutes straight', requiredStories: 1, icon: '🐛' },
-  { id: 'creative_genius', titleKey: 'Creative Genius', descriptionKey: 'Use custom themes 10 times', requiredStories: 10, icon: '🎨' },
   
-  // Language Badges
-  { id: 'polyglot', titleKey: 'Polyglot', descriptionKey: 'Create stories in 3 languages', requiredStories: 3, icon: '🌍' },
-  { id: 'translator', titleKey: 'Translator', descriptionKey: 'Create stories in 5 languages', requiredStories: 5, icon: '📚' },
-  { id: 'world_citizen', titleKey: 'World Citizen', descriptionKey: 'Create stories in all languages', requiredStories: 7, icon: '🌐' },
-  
-  // Page Count Badges
-  { id: 'short_sweet', titleKey: 'Short & Sweet', descriptionKey: 'Create 10 stories with 3 pages', requiredStories: 10, icon: '📄' },
-  { id: 'perfect_length', titleKey: 'Perfect Length', descriptionKey: 'Create 10 stories with 5 pages', requiredStories: 10, icon: '📖' },
-  { id: 'epic_tale', titleKey: 'Epic Tale', descriptionKey: 'Create a story with 12 pages', requiredStories: 1, icon: '📚' },
-  { id: 'novel_writer', titleKey: 'Novel Writer', descriptionKey: 'Create 5 stories with 10+ pages', requiredStories: 5, icon: '✍️' },
-  
-  // Character Badges
-  { id: 'boy_stories', titleKey: 'Boy Adventures', descriptionKey: 'Create 10 stories with boy characters', requiredStories: 10, icon: '👦' },
-  { id: 'girl_stories', titleKey: 'Girl Adventures', descriptionKey: 'Create 10 stories with girl characters', requiredStories: 10, icon: '👧' },
-  { id: 'balanced_storyteller', titleKey: 'Balanced Storyteller', descriptionKey: 'Create equal boy and girl stories', requiredStories: 20, icon: '⚖️' },
-  
-  // Time-based Badges
-  { id: 'morning_magic', titleKey: 'Morning Magic', descriptionKey: 'Create 5 stories in the morning', requiredStories: 5, icon: '☀️' },
-  { id: 'afternoon_adventure', titleKey: 'Afternoon Adventure', descriptionKey: 'Create 5 stories in the afternoon', requiredStories: 5, icon: '🌤️' },
-  { id: 'evening_enchantment', titleKey: 'Evening Enchantment', descriptionKey: 'Create 5 stories in the evening', requiredStories: 5, icon: '🌆' },
-  
-  // Seasonal Badges
-  { id: 'spring_storyteller', titleKey: 'Spring Storyteller', descriptionKey: 'Create 10 stories in spring', requiredStories: 10, icon: '🌸' },
-  { id: 'summer_scribe', titleKey: 'Summer Scribe', descriptionKey: 'Create 10 stories in summer', requiredStories: 10, icon: '☀️' },
-  { id: 'autumn_author', titleKey: 'Autumn Author', descriptionKey: 'Create 10 stories in autumn', requiredStories: 10, icon: '🍂' },
-  { id: 'winter_writer', titleKey: 'Winter Writer', descriptionKey: 'Create 10 stories in winter', requiredStories: 10, icon: '❄️' },
-  
-  // Milestone Badges
-  { id: 'first_week', titleKey: 'First Week', descriptionKey: 'Use the app for 7 days', requiredStories: 1, icon: '📅' },
-  { id: 'first_month', titleKey: 'First Month', descriptionKey: 'Use the app for 30 days', requiredStories: 1, icon: '🗓️' },
-  { id: 'loyal_user', titleKey: 'Loyal User', descriptionKey: 'Use the app for 100 days', requiredStories: 1, icon: '💝' },
-  { id: 'veteran', titleKey: 'Veteran', descriptionKey: 'Use the app for 365 days', requiredStories: 1, icon: '🎖️' },
-  
-  // Social Badges
-  { id: 'family_time', titleKey: 'Family Time', descriptionKey: 'Read stories together 10 times', requiredStories: 10, icon: '👨‍👩‍👧‍👦' },
-  { id: 'bedtime_buddy', titleKey: 'Bedtime Buddy', descriptionKey: 'Read stories at bedtime 20 times', requiredStories: 20, icon: '🛏️' },
-  
-  // Premium Badges
-  { id: 'premium_member', titleKey: 'Premium Member', descriptionKey: 'Upgrade to premium', requiredStories: 1, icon: '👑' },
-  { id: 'premium_veteran', titleKey: 'Premium Veteran', descriptionKey: 'Premium member for 30 days', requiredStories: 1, icon: '💎' },
-  
-  // Special Collection Badges
-  { id: 'collector', titleKey: 'Collector', descriptionKey: 'Save 20 stories to library', requiredStories: 20, icon: '📚' },
-  { id: 'curator', titleKey: 'Curator', descriptionKey: 'Save 50 stories to library', requiredStories: 50, icon: '🏛️' },
-  { id: 'archivist', titleKey: 'Archivist', descriptionKey: 'Save 100 stories to library', requiredStories: 100, icon: '📜' },
-  
-  // Fun Achievement Badges
-  { id: 'lucky_seven', titleKey: 'Lucky Seven', descriptionKey: 'Create your 7th story', requiredStories: 7, icon: '🍀' },
-  { id: 'baker_dozen', titleKey: 'Baker\'s Dozen', descriptionKey: 'Create your 13th story', requiredStories: 13, icon: '🥖' },
-  { id: 'sweet_sixteen', titleKey: 'Sweet Sixteen', descriptionKey: 'Create your 16th story', requiredStories: 16, icon: '🎂' },
-  { id: 'coming_of_age', titleKey: 'Coming of Age', descriptionKey: 'Create your 21st story', requiredStories: 21, icon: '🎉' },
-  
-  // Master Badges
-  { id: 'story_sage', titleKey: 'Story Sage', descriptionKey: 'Unlock 25 other badges', requiredStories: 25, icon: '🧙‍♀️' },
-  { id: 'badge_hunter', titleKey: 'Badge Hunter', descriptionKey: 'Unlock 40 other badges', requiredStories: 40, icon: '🏹' },
-  { id: 'achievement_master', titleKey: 'Achievement Master', descriptionKey: 'Unlock all badges', requiredStories: 60, icon: '🏆' },
+  // Ultimate Achievement
+  { id: 'master_storyteller', titleKey: 'Master Storyteller', descriptionKey: 'Unlock 10 other badges', requiredStories: 10, icon: '🧙‍♂️' },
 ];
 
 type LocalizedBadgeTexts = Record<string, { title: string; description: string }>;
@@ -111,78 +49,25 @@ type LocalizedBadgeTexts = Record<string, { title: string; description: string }
 const BADGE_I18N: Record<string, LocalizedBadgeTexts> = {
   ar: {
     first_story: { title: 'أول قصة', description: 'أكمل أول قصة لك' },
-    story_5: { title: 'مستكشف القصص', description: 'أنشئ 5 قصص' },
-    story_10: { title: 'بطل القصص', description: 'أنشئ 10 قصص' },
-    story_25: { title: 'سيد القصص', description: 'أنشئ 25 قصة' },
-    story_50: { title: 'أسطورة القصص', description: 'أنشئ 50 قصة' },
-    story_100: { title: 'ساحر القصص', description: 'أنشئ 100 قصة' },
-
-    streak_3: { title: 'سلسلة 3 أيام', description: 'اقرأ 3 أيام متتالية' },
-    streak_7: { title: 'سلسلة أسبوع', description: 'اقرأ 7 أيام متتالية' },
-    streak_14: { title: 'محارب الأسبوعين', description: 'اقرأ 14 يومًا متتاليًا' },
-    streak_30: { title: 'سيد الشهر', description: 'اقرأ 30 يومًا متتاليًا' },
-    streak_60: { title: 'ماسة الالتزام', description: 'اقرأ 60 يومًا متتاليًا' },
-    streak_100: { title: 'بطل المئة', description: 'اقرأ 100 يوم متتالي' },
-
-    adventure_lover: { title: 'محب المغامرة', description: 'أنشئ 5 قصص مغامرة' },
-    fairy_tale_fan: { title: 'محب الحكايات الخيالية', description: 'أنشئ 5 قصص خيالية' },
-    space_explorer: { title: 'مستكشف الفضاء', description: 'أنشئ 5 قصص فضائية' },
-    animal_friend: { title: 'صديق الحيوانات', description: 'أنشئ 5 قصص عن الحيوانات' },
-    mystery_solver: { title: 'حلّال الألغاز', description: 'أنشئ 5 قصص غامضة' },
-    fantasy_dreamer: { title: 'حالم الفانتازيا', description: 'أنشئ 5 قصص فانتازيا' },
-
+    story_explorer: { title: 'مستكشف القصص', description: 'أنشئ 5 قصص' },
+    story_master: { title: 'سيد القصص', description: 'أنشئ 15 قصة' },
+    story_legend: { title: 'أسطورة القصص', description: 'أنشئ 30 قصة' },
+    
+    reading_streak: { title: 'سلسلة القراءة', description: 'اقرأ القصص 7 أيام متتالية' },
+    dedicated_reader: { title: 'قارئ مخلص', description: 'اقرأ القصص 30 يومًا متتاليًا' },
+    
+    adventure_lover: { title: 'محب المغامرة', description: 'أنشئ 3 قصص مغامرة' },
+    fantasy_dreamer: { title: 'حالم الفانتازيا', description: 'أنشئ 3 قصص فانتازيا' },
+    space_explorer: { title: 'مستكشف الفضاء', description: 'أنشئ 3 قصص فضائية' },
+    
+    illustration_artist: { title: 'فنان الرسوم', description: 'أنشئ 5 قصص مع الرسوم التوضيحية' },
+    polyglot: { title: 'متعدد اللغات', description: 'أنشئ قصصًا بـ 3 لغات مختلفة' },
+    epic_storyteller: { title: 'راوي ملحمي', description: 'أنشئ قصة من 10 صفحات أو أكثر' },
+    
     early_bird: { title: 'المستيقظ مبكرًا', description: 'أنشئ قصة قبل الساعة 8 صباحًا' },
     night_owl: { title: 'بومة الليل', description: 'أنشئ قصة بعد الساعة 10 مساءً' },
-    weekend_warrior: { title: 'محارب عطلة نهاية الأسبوع', description: 'أنشئ قصصًا في يومي العطلة' },
-    speed_reader: { title: 'قارئ سريع', description: 'اقرأ قصة في أقل من 5 دقائق' },
-    bookworm: { title: 'دودة كتب', description: 'اقرأ لمدة 30 دقيقة متواصلة' },
-    creative_genius: { title: 'عبقري الإبداع', description: 'استخدم السمات المخصصة 10 مرات' },
-
-    polyglot: { title: 'متعدد اللغات', description: 'أنشئ قصصًا بـ 3 لغات' },
-    translator: { title: 'مترجم', description: 'أنشئ قصصًا بـ 5 لغات' },
-    world_citizen: { title: 'مواطن العالم', description: 'أنشئ قصصًا بكل اللغات' },
-
-    short_sweet: { title: 'قصيرة ولطيفة', description: 'أنشئ 10 قصص من 3 صفحات' },
-    perfect_length: { title: 'الطول المثالي', description: 'أنشئ 10 قصص من 5 صفحات' },
-    epic_tale: { title: 'حكاية ملحمية', description: 'أنشئ قصة من 12 صفحة' },
-    novel_writer: { title: 'كاتب روايات', description: 'أنشئ 5 قصص من 10 صفحات أو أكثر' },
-
-    boy_stories: { title: 'مغامرات الأولاد', description: 'أنشئ 10 قصص لشخصيات أولاد' },
-    girl_stories: { title: 'مغامرات البنات', description: 'أنشئ 10 قصص لشخصيات بنات' },
-    balanced_storyteller: { title: 'راوي متوازن', description: 'أنشئ عددًا متساويًا من القصص للأولاد والبنات' },
-
-    morning_magic: { title: 'سحر الصباح', description: 'أنشئ 5 قصص في الصباح' },
-    afternoon_adventure: { title: 'مغامرة بعد الظهر', description: 'أنشئ 5 قصص بعد الظهر' },
-    evening_enchantment: { title: 'سحر المساء', description: 'أنشئ 5 قصص في المساء' },
-
-    spring_storyteller: { title: 'راوي الربيع', description: 'أنشئ 10 قصص في الربيع' },
-    summer_scribe: { title: 'كاتب الصيف', description: 'أنشئ 10 قصص في الصيف' },
-    autumn_author: { title: 'كاتب الخريف', description: 'أنشئ 10 قصص في الخريف' },
-    winter_writer: { title: 'كاتب الشتاء', description: 'أنشئ 10 قصص في الشتاء' },
-
-    first_week: { title: 'الأسبوع الأول', description: 'استخدم التطبيق لمدة 7 أيام' },
-    first_month: { title: 'الشهر الأول', description: 'استخدم التطبيق لمدة 30 يومًا' },
-    loyal_user: { title: 'مستخدم وفيّ', description: 'استخدم التطبيق لمدة 100 يوم' },
-    veteran: { title: 'مخضرم', description: 'استخدم التطبيق لمدة 365 يومًا' },
-
-    family_time: { title: 'وقت العائلة', description: 'اقرأ القصص معًا 10 مرات' },
-    bedtime_buddy: { title: 'رفيق النوم', description: 'اقرأ القصص وقت النوم 20 مرة' },
-
-    premium_member: { title: 'عضو بريميوم', description: 'قم بالترقية إلى بريميوم' },
-    premium_veteran: { title: 'بريميوم مخضرم', description: 'عضو بريميوم لمدة 30 يومًا' },
-
-    collector: { title: 'جامع', description: 'احفظ 20 قصة في المكتبة' },
-    curator: { title: 'قيّم', description: 'احفظ 50 قصة في المكتبة' },
-    archivist: { title: 'أمين الأرشيف', description: 'احفظ 100 قصة في المكتبة' },
-
-    lucky_seven: { title: 'الرقم السعيد سبعة', description: 'أنشئ قصتك السابعة' },
-    baker_dozen: { title: 'دزينة الخباز', description: 'أنشئ قصتك الثالثة عشرة' },
-    sweet_sixteen: { title: 'السادسة عشرة الحلوة', description: 'أنشئ قصتك السادسة عشرة' },
-    coming_of_age: { title: 'سن الرشد', description: 'أنشئ قصتك الحادية والعشرين' },
-
-    story_sage: { title: 'حكيم القصص', description: 'افتح 25 شارة أخرى' },
-    badge_hunter: { title: 'صيّاد الشارات', description: 'افتح 40 شارة أخرى' },
-    achievement_master: { title: 'سيد الإنجازات', description: 'افتح كل الشارات' },
+    
+    master_storyteller: { title: 'سيد الحكايات', description: 'افتح 10 شارات أخرى' },
   },
 };
 
