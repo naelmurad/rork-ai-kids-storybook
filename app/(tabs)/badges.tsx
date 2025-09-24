@@ -106,6 +106,86 @@ const BADGE_DEFS: BadgeDef[] = [
   { id: 'achievement_master', titleKey: 'Achievement Master', descriptionKey: 'Unlock all badges', requiredStories: 60, icon: '🏆' },
 ];
 
+type LocalizedBadgeTexts = Record<string, { title: string; description: string }>;
+
+const BADGE_I18N: Record<string, LocalizedBadgeTexts> = {
+  ar: {
+    first_story: { title: 'أول قصة', description: 'أكمل أول قصة لك' },
+    story_5: { title: 'مستكشف القصص', description: 'أنشئ 5 قصص' },
+    story_10: { title: 'بطل القصص', description: 'أنشئ 10 قصص' },
+    story_25: { title: 'سيد القصص', description: 'أنشئ 25 قصة' },
+    story_50: { title: 'أسطورة القصص', description: 'أنشئ 50 قصة' },
+    story_100: { title: 'ساحر القصص', description: 'أنشئ 100 قصة' },
+
+    streak_3: { title: 'سلسلة 3 أيام', description: 'اقرأ 3 أيام متتالية' },
+    streak_7: { title: 'سلسلة أسبوع', description: 'اقرأ 7 أيام متتالية' },
+    streak_14: { title: 'محارب الأسبوعين', description: 'اقرأ 14 يومًا متتاليًا' },
+    streak_30: { title: 'سيد الشهر', description: 'اقرأ 30 يومًا متتاليًا' },
+    streak_60: { title: 'ماسة الالتزام', description: 'اقرأ 60 يومًا متتاليًا' },
+    streak_100: { title: 'بطل المئة', description: 'اقرأ 100 يوم متتالي' },
+
+    adventure_lover: { title: 'محب المغامرة', description: 'أنشئ 5 قصص مغامرة' },
+    fairy_tale_fan: { title: 'محب الحكايات الخيالية', description: 'أنشئ 5 قصص خيالية' },
+    space_explorer: { title: 'مستكشف الفضاء', description: 'أنشئ 5 قصص فضائية' },
+    animal_friend: { title: 'صديق الحيوانات', description: 'أنشئ 5 قصص عن الحيوانات' },
+    mystery_solver: { title: 'حلّال الألغاز', description: 'أنشئ 5 قصص غامضة' },
+    fantasy_dreamer: { title: 'حالم الفانتازيا', description: 'أنشئ 5 قصص فانتازيا' },
+
+    early_bird: { title: 'المستيقظ مبكرًا', description: 'أنشئ قصة قبل الساعة 8 صباحًا' },
+    night_owl: { title: 'بومة الليل', description: 'أنشئ قصة بعد الساعة 10 مساءً' },
+    weekend_warrior: { title: 'محارب عطلة نهاية الأسبوع', description: 'أنشئ قصصًا في يومي العطلة' },
+    speed_reader: { title: 'قارئ سريع', description: 'اقرأ قصة في أقل من 5 دقائق' },
+    bookworm: { title: 'دودة كتب', description: 'اقرأ لمدة 30 دقيقة متواصلة' },
+    creative_genius: { title: 'عبقري الإبداع', description: 'استخدم السمات المخصصة 10 مرات' },
+
+    polyglot: { title: 'متعدد اللغات', description: 'أنشئ قصصًا بـ 3 لغات' },
+    translator: { title: 'مترجم', description: 'أنشئ قصصًا بـ 5 لغات' },
+    world_citizen: { title: 'مواطن العالم', description: 'أنشئ قصصًا بكل اللغات' },
+
+    short_sweet: { title: 'قصيرة ولطيفة', description: 'أنشئ 10 قصص من 3 صفحات' },
+    perfect_length: { title: 'الطول المثالي', description: 'أنشئ 10 قصص من 5 صفحات' },
+    epic_tale: { title: 'حكاية ملحمية', description: 'أنشئ قصة من 12 صفحة' },
+    novel_writer: { title: 'كاتب روايات', description: 'أنشئ 5 قصص من 10 صفحات أو أكثر' },
+
+    boy_stories: { title: 'مغامرات الأولاد', description: 'أنشئ 10 قصص لشخصيات أولاد' },
+    girl_stories: { title: 'مغامرات البنات', description: 'أنشئ 10 قصص لشخصيات بنات' },
+    balanced_storyteller: { title: 'راوي متوازن', description: 'أنشئ عددًا متساويًا من القصص للأولاد والبنات' },
+
+    morning_magic: { title: 'سحر الصباح', description: 'أنشئ 5 قصص في الصباح' },
+    afternoon_adventure: { title: 'مغامرة بعد الظهر', description: 'أنشئ 5 قصص بعد الظهر' },
+    evening_enchantment: { title: 'سحر المساء', description: 'أنشئ 5 قصص في المساء' },
+
+    spring_storyteller: { title: 'راوي الربيع', description: 'أنشئ 10 قصص في الربيع' },
+    summer_scribe: { title: 'كاتب الصيف', description: 'أنشئ 10 قصص في الصيف' },
+    autumn_author: { title: 'كاتب الخريف', description: 'أنشئ 10 قصص في الخريف' },
+    winter_writer: { title: 'كاتب الشتاء', description: 'أنشئ 10 قصص في الشتاء' },
+
+    first_week: { title: 'الأسبوع الأول', description: 'استخدم التطبيق لمدة 7 أيام' },
+    first_month: { title: 'الشهر الأول', description: 'استخدم التطبيق لمدة 30 يومًا' },
+    loyal_user: { title: 'مستخدم وفيّ', description: 'استخدم التطبيق لمدة 100 يوم' },
+    veteran: { title: 'مخضرم', description: 'استخدم التطبيق لمدة 365 يومًا' },
+
+    family_time: { title: 'وقت العائلة', description: 'اقرأ القصص معًا 10 مرات' },
+    bedtime_buddy: { title: 'رفيق النوم', description: 'اقرأ القصص وقت النوم 20 مرة' },
+
+    premium_member: { title: 'عضو بريميوم', description: 'قم بالترقية إلى بريميوم' },
+    premium_veteran: { title: 'بريميوم مخضرم', description: 'عضو بريميوم لمدة 30 يومًا' },
+
+    collector: { title: 'جامع', description: 'احفظ 20 قصة في المكتبة' },
+    curator: { title: 'قيّم', description: 'احفظ 50 قصة في المكتبة' },
+    archivist: { title: 'أمين الأرشيف', description: 'احفظ 100 قصة في المكتبة' },
+
+    lucky_seven: { title: 'الرقم السعيد سبعة', description: 'أنشئ قصتك السابعة' },
+    baker_dozen: { title: 'دزينة الخباز', description: 'أنشئ قصتك الثالثة عشرة' },
+    sweet_sixteen: { title: 'السادسة عشرة الحلوة', description: 'أنشئ قصتك السادسة عشرة' },
+    coming_of_age: { title: 'سن الرشد', description: 'أنشئ قصتك الحادية والعشرين' },
+
+    story_sage: { title: 'حكيم القصص', description: 'افتح 25 شارة أخرى' },
+    badge_hunter: { title: 'صيّاد الشارات', description: 'افتح 40 شارة أخرى' },
+    achievement_master: { title: 'سيد الإنجازات', description: 'افتح كل الشارات' },
+  },
+};
+
 export default function BadgesScreen() {
   const { t, settings } = useAppSettings();
   const { stories } = useStories();
@@ -118,11 +198,21 @@ export default function BadgesScreen() {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const sparkleAnims = useRef(Array.from({ length: 6 }, () => new Animated.Value(0))).current;
 
+  const lang = (settings.language as string) ?? 'en';
+  const localize = (def: BadgeDef) => {
+    const entry = BADGE_I18N[lang]?.[def.id];
+    return {
+      title: entry?.title ?? def.titleKey,
+      description: entry?.description ?? def.descriptionKey,
+    };
+  };
+
   const items = useMemo(() => {
     return BADGE_DEFS.map(def => {
       const progressRef = def.id.startsWith('streak') ? streak : completedCount;
       const earned = progressRef >= def.requiredStories;
-      return { ...def, earned };
+      const { title, description } = localize(def);
+      return { ...def, earned, title, description };
     }).sort((a, b) => Number(b.earned) - Number(a.earned) || a.requiredStories - b.requiredStories);
   }, [completedCount, streak]);
 
@@ -156,7 +246,7 @@ export default function BadgesScreen() {
       </ScrollView>
 
       <BadgeModal 
-        badge={selectedBadge} 
+        badge={selectedBadge ? { ...selectedBadge, ...localize(selectedBadge) } : null} 
         visible={showModal} 
         onClose={closeBadgeModal}
         scaleAnim={scaleAnim}
@@ -209,7 +299,7 @@ export default function BadgesScreen() {
 }
 
 function BadgeCard({ item, earned, onPress }: { 
-  item: { id: string; titleKey: string; descriptionKey: string; requiredStories: number; icon: string; }, 
+  item: { id: string; titleKey: string; descriptionKey: string; requiredStories: number; icon: string; title?: string; description?: string; }, 
   earned: boolean,
   onPress?: () => void 
 }) {
@@ -226,8 +316,8 @@ function BadgeCard({ item, earned, onPress }: {
         <Text style={styles.iconEmoji}>{item.icon}</Text>
       </View>
       <View style={styles.cardText}>
-        <Text style={styles.cardTitle}>{item.titleKey}</Text>
-        <Text style={styles.cardDesc}>{item.descriptionKey}</Text>
+        <Text style={styles.cardTitle}>{item.title ?? item.titleKey}</Text>
+        <Text style={styles.cardDesc}>{item.description ?? item.descriptionKey}</Text>
       </View>
       {earned ? (
         <ChevronRight size={18} color="#667eea" />
@@ -242,7 +332,7 @@ function BadgeCard({ item, earned, onPress }: {
 }
 
 function BadgeModal({ badge, visible, onClose, scaleAnim, sparkleAnims, screenWidth }: {
-  badge: BadgeDef | null,
+  badge: (BadgeDef & { title?: string; description?: string }) | null,
   visible: boolean,
   onClose: () => void,
   scaleAnim: Animated.Value,
@@ -290,8 +380,8 @@ function BadgeModal({ badge, visible, onClose, scaleAnim, sparkleAnims, screenWi
             <View style={styles.modalIconContainer}>
               <Text style={styles.modalIconEmoji}>{badge.icon}</Text>
             </View>
-            <Text style={styles.modalTitle}>{badge.titleKey}</Text>
-            <Text style={styles.modalDescription}>{badge.descriptionKey}</Text>
+            <Text style={styles.modalTitle}>{badge.title ?? badge.titleKey}</Text>
+            <Text style={styles.modalDescription}>{badge.description ?? badge.descriptionKey}</Text>
             
             <View style={styles.congratsContainer}>
               <Award size={20} color="#FFD700" />
