@@ -6,6 +6,8 @@ import { StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StoryProvider } from "@/hooks/story-store";
 import { AppSettingsProvider, useAppSettings } from "@/hooks/app-settings";
+import { SubscriptionProvider } from "@/hooks/subscription-store";
+import { AdProvider } from "@/hooks/ad-store";
 import OnboardingScreen from "@/components/OnboardingScreen";
 
 SplashScreen.preventAutoHideAsync();
@@ -53,11 +55,15 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <AppSettingsProvider>
-        <StoryProvider>
-          <GestureHandlerRootView style={styles.container}>
-            <RootLayoutNav />
-          </GestureHandlerRootView>
-        </StoryProvider>
+        <SubscriptionProvider>
+          <AdProvider>
+            <StoryProvider>
+              <GestureHandlerRootView style={styles.container}>
+                <RootLayoutNav />
+              </GestureHandlerRootView>
+            </StoryProvider>
+          </AdProvider>
+        </SubscriptionProvider>
       </AppSettingsProvider>
     </QueryClientProvider>
   );

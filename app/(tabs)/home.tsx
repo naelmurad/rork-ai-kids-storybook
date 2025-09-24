@@ -25,6 +25,8 @@ import ThemeSelector from '@/components/ThemeSelector';
 import LanguageSelector from '@/components/LanguageSelector';
 import PremiumUpgradeScreen from '@/components/PremiumUpgradeScreen';
 import StoryBanner from '@/components/StoryBanner';
+import BannerAd from '@/components/BannerAd';
+import { useAds } from '@/hooks/ad-store';
 
 export default function HomeScreen() {
   const { stories, isLoading, isGenerating, generationProgress, generateStory } = useStories();
@@ -40,6 +42,7 @@ export default function HomeScreen() {
     t,
     currentLanguage 
   } = useAppSettings();
+  const { loadInterstitialAd, showInterstitialAd, shouldShowAd } = useAds();
   const insets = useSafeAreaInsets();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
@@ -315,6 +318,12 @@ export default function HomeScreen() {
       
       // Only after story is completely generated, increment usage and show it
       await incrementDailyUsage();
+      
+      // Show interstitial ad occasionally after story creation
+      if (shouldShowAd(3)) {
+        await loadInterstitialAd();
+        await showInterstitialAd();
+      }
       
       // Close modal and show story after generation is complete
       setShowCreateModal(false);
@@ -767,6 +776,9 @@ export default function HomeScreen() {
           </LinearGradient>
         </TouchableOpacity>
 
+        {/* Banner Ad */}
+        <BannerAd size="medium" style={{ marginHorizontal: 20 }} />
+
         <View style={styles.storiesSection}>
           <Text style={styles.sectionTitle}>{t('yourStories')}</Text>
           
@@ -784,12 +796,17 @@ export default function HomeScreen() {
               </Text>
             </View>
           ) : (
-            stories.map((story) => (
-              <StoryCard
-                key={story.id}
-                story={story}
-                onPress={() => setSelectedStory(story)}
-              />
+            stories.map((story, index) => (
+              <React.Fragment key={story.id}>
+                <StoryCard
+                  story={story}
+                  onPress={() => setSelectedStory(story)}
+                />
+                {/* Show banner ad after every 3rd story */}
+                {(index + 1) % 3 === 0 && (
+                  <BannerAd size="small" style={{ marginHorizontal: 20, marginVertical: 8 }} />
+                )}
+              </React.Fragment>
             ))
           )}
         </View>
@@ -802,10 +819,6 @@ export default function HomeScreen() {
       <PremiumUpgradeScreen
         visible={showPremiumUpgrade}
         onClose={() => setShowPremiumUpgrade(false)}
-        onUpgrade={async () => {
-          await upgradeToPremium();
-          setShowPremiumUpgrade(false);
-        }}
       />
     </View>
   );

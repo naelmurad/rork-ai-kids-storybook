@@ -17,11 +17,11 @@ import {
   Download
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSubscription } from '@/hooks/subscription-store';
 
 interface PremiumUpgradeScreenProps {
   visible: boolean;
   onClose: () => void;
-  onUpgrade: () => void;
 }
 
 const premiumFeatures = [
@@ -47,10 +47,19 @@ const premiumFeatures = [
 
 export default function PremiumUpgradeScreen({ 
   visible, 
-  onClose, 
-  onUpgrade 
+  onClose
 }: PremiumUpgradeScreenProps) {
   const insets = useSafeAreaInsets();
+  const { startSubscription, mockPurchase } = useSubscription();
+
+  const handleUpgrade = async () => {
+    // For testing - remove mockPurchase in production
+    await mockPurchase();
+    onClose();
+    
+    // For production, use:
+    // await startSubscription('weekly');
+  };
 
   return (
     <Modal
@@ -145,7 +154,7 @@ export default function PremiumUpgradeScreen({
           <View style={styles.actionContainer}>
             <TouchableOpacity
               style={styles.upgradeButton}
-              onPress={onUpgrade}
+              onPress={handleUpgrade}
               activeOpacity={0.8}
               testID="upgrade-button"
             >
