@@ -162,10 +162,10 @@ export const [StoryProvider, useStories] = createContextHook(() => {
         const characterInfo = getCharacterDescription(request.gender || 'boy', request.childAge);
         const baseCharacterPrompt = `MAIN CHARACTER DESCRIPTION (MUST BE IDENTICAL IN ALL PAGES): ${characterInfo.appearance}. CHARACTER NAME: ${request.childName}. CRITICAL: This exact character appearance must be maintained throughout all illustrations - same hair, same eyes, same face, same clothes, same proportions.`;
         
-        // Generate images sequentially for better consistency and speed
-        console.log('Starting sequential image generation for consistent character...');
+        // Generate images in parallel for better speed
+        console.log('Starting parallel image generation for faster processing...');
         
-        for (let i = 0; i < totalPages; i++) {
+        const imagePromises = Array.from({ length: totalPages }, async (_, i) => {
           const page = parsedStory.pages[i];
           let imageBase64 = '';
           
@@ -244,7 +244,7 @@ export const [StoryProvider, useStories] = createContextHook(() => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   prompt: `Children's book illustration page ${i + 1} of ${expectedPages}. ${baseCharacterPrompt} SCENE: "${page.text}". Style: ${characterInfo.style}, colorful, friendly, safe for children. Theme: ${request.theme}. IMPORTANT: Show the SAME character ${request.childName} as described above. NO OTHER CHILDREN in the scene. NO TEXT OR WRITING in the image. Focus on the scene while keeping the character identical to previous pages.`,
-                  size: '1024x1024'
+                  size: '512x512'
                 })
               });
 
@@ -260,15 +260,44 @@ export const [StoryProvider, useStories] = createContextHook(() => {
             console.error(`Error generating image for page ${i + 1}:`, error);
           }
 
-          pages.push({
-            id: `page-${i}`,
-            text: page.text,
-            imageBase64: imageBase64 && imageBase64.trim() !== '' && imageBase64.length > 10 ? imageBase64 : ''
-          });
+
           
-          // Update progress after each page
-          const progressPerPage = 45 / totalPages; // 45% of progress for image generation
-          setGenerationProgress(40 + (i + 1) * progressPerPage);
+          return {
+            index: i,
+            page: parsedStory.pages[i],
+            imageBase64: imageBase64 && imageBase64.trim() !== '' && imageBase64.length > 10 ? imageBase64 : ''
+          };
+        });
+        
+        // Process images in parallel with progress updates
+        const imageResults = await Promise.allSettled(imagePromises);
+        
+        // Sort results by index and create pages array
+        const sortedResults = imageResults
+          .map((result, index) => ({ result, index }))
+          .filter(({ result }) => result.status === 'fulfilled')
+          .map(({ result }) => (result as PromiseFulfilledResult<any>).value)
+          .sort((a, b) => a.index - b.index);
+        
+        // Create pages from results
+        for (const { index, page, imageBase64 } of sortedResults) {
+          pages.push({
+            id: `page-${index}`,
+            text: page.text,
+            imageBase64
+          });
+        }
+        
+        // Fill any missing pages (in case some failed)
+        for (let i = pages.length; i < totalPages; i++) {
+          const page = parsedStory.pages[i];
+          if (page) {
+            pages.push({
+              id: `page-${i}`,
+              text: page.text,
+              imageBase64: ''
+            });
+          }
         }
         
         setGenerationProgress(85);
