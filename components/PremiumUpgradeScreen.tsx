@@ -153,7 +153,9 @@ export default function PremiumUpgradeScreen({
                 style={styles.upgradeButtonGradient}
               >
                 <Crown size={20} color="#FFF" />
-                <Text style={styles.upgradeButtonText}>Start Premium</Text>
+                <Text style={styles.upgradeButtonText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                  Start Premium
+                </Text>
               </LinearGradient>
             </TouchableOpacity>
             
@@ -356,9 +358,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   upgradeButtonText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#FFF',
+    flexShrink: 1,
+    maxWidth: 220,
   },
   laterButton: {
     paddingVertical: 12,
