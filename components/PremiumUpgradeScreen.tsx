@@ -64,7 +64,7 @@ export default function PremiumUpgradeScreen({
           style={[styles.gradient, { paddingTop: insets.top + 20 }]}
         >
           <View style={styles.header}>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton} testID="premium-close">
               <X size={24} color="#333" />
             </TouchableOpacity>
             <View style={styles.crownContainer}>
@@ -77,63 +77,63 @@ export default function PremiumUpgradeScreen({
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.contentContainer}
           >
-            <Text style={styles.title}>Upgrade to Premium</Text>
-            <Text style={styles.subtitle}>
+            <Text style={styles.title} testID="premium-title">Upgrade to Premium</Text>
+            <Text style={styles.subtitle} testID="premium-subtitle">
               Unlock unlimited magical stories
             </Text>
 
             <View style={styles.pricingContainer}>
-              <View style={styles.pricingCard}>
-                <Text style={styles.pricingTitle}>Premium Weekly</Text>
+              <View style={styles.pricingCard} testID="pricing-card">
+                <Text style={styles.pricingTitle} testID="pricing-title">Premium Weekly</Text>
                 <View style={styles.priceRow}>
-                  <Text style={styles.price}>$1.50</Text>
-                  <Text style={styles.pricePeriod}>/week</Text>
+                  <Text style={styles.price} testID="pricing-price">$1.50</Text>
+                  <Text style={styles.pricePeriod} testID="pricing-period">/week</Text>
                 </View>
-                <Text style={styles.pricingDescription}>
+                <Text style={styles.pricingDescription} testID="pricing-description">
                   Cancel anytime
                 </Text>
               </View>
             </View>
 
             <View style={styles.featuresContainer}>
-              <Text style={styles.featuresTitle}>What you get:</Text>
+              <Text style={styles.featuresTitle} testID="features-title">What you get:</Text>
               {premiumFeatures.map((feature, index) => {
                 const IconComponent = feature.icon;
                 return (
-                  <View key={`${feature.title}-${index}`} style={styles.featureItem}>
-                    <View style={[styles.featureIcon, { backgroundColor: feature.color }]}>
-                      <IconComponent size={20} color="#FFF" />
+                  <View key={`${feature.title}-${index}`} style={styles.featureItem} testID={`feature-item-${index}`}>
+                    <View style={[styles.featureIcon, { backgroundColor: feature.color }]}> 
+                      <IconComponent size={18} color="#FFF" />
                     </View>
                     <View style={styles.featureContent}>
-                      <Text style={styles.featureTitle}>{feature.title}</Text>
-                      <Text style={styles.featureDescription}>{feature.description}</Text>
+                      <Text style={styles.featureTitle} testID={`feature-title-${index}`}>{feature.title}</Text>
+                      <Text style={styles.featureDescription} testID={`feature-description-${index}`}>{feature.description}</Text>
                     </View>
-                    <Check size={20} color="#4CAF50" />
+                    <Check size={18} color="#4CAF50" />
                   </View>
                 );
               })}
             </View>
 
             <View style={styles.comparisonContainer}>
-              <Text style={styles.comparisonTitle}>Free vs Premium</Text>
+              <Text style={styles.comparisonTitle} testID="comparison-title">Free vs Premium</Text>
               <View style={styles.comparisonTable}>
                 <View style={styles.comparisonRow}>
-                  <Text style={styles.comparisonFeature}>Weekly Stories</Text>
+                  <Text style={styles.comparisonFeature} testID="cmp-weekly">Weekly Stories</Text>
                   <Text style={styles.comparisonFree}>2</Text>
                   <Text style={styles.comparisonPremium}>Unlimited</Text>
                 </View>
                 <View style={styles.comparisonRow}>
-                  <Text style={styles.comparisonFeature}>Pages per Story</Text>
+                  <Text style={styles.comparisonFeature} testID="cmp-pages">Pages per Story</Text>
                   <Text style={styles.comparisonFree}>5</Text>
                   <Text style={styles.comparisonPremium}>12</Text>
                 </View>
                 <View style={styles.comparisonRow}>
-                  <Text style={styles.comparisonFeature}>PDF Export</Text>
+                  <Text style={styles.comparisonFeature} testID="cmp-pdf">PDF Export</Text>
                   <Text style={styles.comparisonFree}>✗</Text>
                   <Text style={styles.comparisonPremium}>✓</Text>
                 </View>
                 <View style={styles.comparisonRow}>
-                  <Text style={styles.comparisonFeature}>Ads</Text>
+                  <Text style={styles.comparisonFeature} testID="cmp-ads">Ads</Text>
                   <Text style={styles.comparisonFree}>Yes</Text>
                   <Text style={styles.comparisonPremium}>No</Text>
                 </View>
@@ -147,13 +147,14 @@ export default function PremiumUpgradeScreen({
               style={styles.upgradeButton}
               onPress={onUpgrade}
               activeOpacity={0.8}
+              testID="upgrade-button"
             >
               <LinearGradient
                 colors={['#4CAF50', '#45A049']}
                 style={styles.upgradeButtonGradient}
               >
-                <Crown size={20} color="#FFF" />
-                <Text style={styles.upgradeButtonText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                <Crown size={18} color="#FFF" />
+                <Text style={styles.upgradeButtonText} testID="upgrade-cta" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                   Start Premium
                 </Text>
               </LinearGradient>
@@ -162,8 +163,9 @@ export default function PremiumUpgradeScreen({
             <TouchableOpacity
               style={styles.laterButton}
               onPress={onClose}
+              testID="maybe-later-button"
             >
-              <Text style={styles.laterButtonText}>Maybe Later</Text>
+              <Text style={styles.laterButtonText} testID="maybe-later">Maybe Later</Text>
             </TouchableOpacity>
           </View>
         </LinearGradient>
@@ -207,78 +209,78 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   title: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: 'bold',
     color: '#333',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   subtitle: {
-    fontSize: 9,
+    fontSize: 7,
     color: '#666',
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: 24,
   },
   pricingContainer: {
-    marginBottom: 32,
+    marginBottom: 24,
   },
   pricingCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 16,
-    padding: 24,
+    padding: 20,
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#4CAF50',
   },
   pricingTitle: {
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   price: {
-    fontSize: 18,
+    fontSize: 12,
     fontWeight: 'bold',
     color: '#4CAF50',
   },
   pricePeriod: {
-    fontSize: 9,
+    fontSize: 7,
     color: '#666',
     marginLeft: 4,
   },
   pricingDescription: {
-    fontSize: 6,
+    fontSize: 5,
     color: '#666',
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 12,
   },
   featuresContainer: {
-    marginBottom: 32,
+    marginBottom: 24,
   },
   featuresTitle: {
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    gap: 12,
+    padding: 12,
+    marginBottom: 10,
+    gap: 10,
   },
   featureIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -286,52 +288,52 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   featureTitle: {
-    fontSize: 8,
+    fontSize: 6,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   featureDescription: {
-    fontSize: 7,
+    fontSize: 5,
     color: '#666',
   },
   comparisonContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 16,
-    padding: 20,
+    padding: 16,
   },
   comparisonTitle: {
-    fontSize: 9,
+    fontSize: 7,
     fontWeight: 'bold',
     color: '#333',
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   comparisonTable: {
-    gap: 12,
+    gap: 10,
   },
   comparisonRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 6,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
   comparisonFeature: {
     flex: 1,
-    fontSize: 7,
+    fontSize: 5,
     color: '#333',
     fontWeight: '500',
   },
   comparisonFree: {
     width: 60,
-    fontSize: 7,
+    fontSize: 5,
     color: '#666',
     textAlign: 'center',
   },
   comparisonPremium: {
     width: 60,
-    fontSize: 7,
+    fontSize: 5,
     color: '#4CAF50',
     fontWeight: 'bold',
     textAlign: 'center',
@@ -353,23 +355,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderRadius: 16,
     gap: 8,
   },
   upgradeButtonText: {
-    fontSize: 8,
+    fontSize: 6,
     fontWeight: 'bold',
     color: '#FFF',
     flexShrink: 1,
     maxWidth: 220,
   },
   laterButton: {
-    paddingVertical: 12,
+    paddingVertical: 10,
     alignItems: 'center',
   },
   laterButtonText: {
-    fontSize: 8,
+    fontSize: 6,
     color: '#666',
     fontWeight: '600',
   },
