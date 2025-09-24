@@ -706,7 +706,7 @@ export default function HomeScreen() {
           
           <View style={styles.statCard}>
             <Star size={20} color="#FFD700" />
-            <Text style={styles.statNumber}>{settings.isPremium ? 'Premium' : 'Free'}</Text>
+            <Text style={[styles.statNumber, styles.planText]}>{settings.isPremium ? 'Premium' : 'Free'}</Text>
             <Text style={styles.statLabel}>Plan</Text>
           </View>
         </View>
@@ -1315,5 +1315,9 @@ const styles = StyleSheet.create({
   },
   modalCloseTextDisabled: {
     color: '#CCC',
+  },
+  planText: {
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });
