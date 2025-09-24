@@ -250,9 +250,10 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   pricingDescription: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#666',
     textAlign: 'center',
+    lineHeight: 16,
   },
   featuresContainer: {
     marginBottom: 32,
