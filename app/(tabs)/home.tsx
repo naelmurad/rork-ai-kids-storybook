@@ -267,6 +267,9 @@ export default function HomeScreen() {
       }
 
       console.log('Form validation passed, proceeding with story creation...');
+      
+      // Clear any previous errors
+      setShowError(null);
 
       // Convert Arabic numerals to English numerals if needed
       const normalizedAge = childAge.replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString());
@@ -311,21 +314,25 @@ export default function HomeScreen() {
         };
         finalAvatarUri = staticAvatars[selectedGender];
         console.log(`Using static ${selectedGender} avatar for illustrated story. Selected gender: ${selectedGender}`);
-        
-        // Validate the avatar URI
-        if (!finalAvatarUri || finalAvatarUri.trim() === '') {
-          console.error(`Invalid avatar URI for ${selectedGender}:`, finalAvatarUri);
-          finalAvatarUri = undefined; // This will trigger text-only mode
-        }
       }
       
       console.log('Starting story generation...');
       
-      // Generate the story and wait for completion
-      const story = await generateStory({
+      // Add timeout protection for the entire story generation process
+      const storyGenerationTimeout = 120000; // 2 minutes timeout
+      const storyGenerationPromise = generateStory({
         ...request,
         includeIllustrations: storyMode === 'illustrated'
       }, finalAvatarUri);
+      
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Story generation timed out. Please try again with fewer pages or text-only mode.'));
+        }, storyGenerationTimeout);
+      });
+      
+      // Race between story generation and timeout
+      const story = await Promise.race([storyGenerationPromise, timeoutPromise]);
       
       console.log('Story generation completed successfully!');
       
@@ -337,8 +344,12 @@ export default function HomeScreen() {
       if (shouldShowAd(3)) {
         console.log('Loading and showing interstitial ad...');
         try {
-          await loadInterstitialAd();
-          await showInterstitialAd();
+          // Add timeout for ad loading to prevent hanging
+          const adPromise = Promise.all([loadInterstitialAd(), showInterstitialAd()]);
+          const adTimeout = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Ad timeout')), 10000);
+          });
+          await Promise.race([adPromise, adTimeout]);
         } catch (adError) {
           console.log('Ad failed to load/show, continuing...', adError);
         }
@@ -370,8 +381,22 @@ export default function HomeScreen() {
       console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
       console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       
+      // Determine user-friendly error message
+      let errorMessage = t('failedToGenerate');
+      if (error instanceof Error) {
+        if (error.message.includes('timeout')) {
+          errorMessage = 'Story generation timed out. Please try again with fewer pages or text-only mode.';
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else if (error.message.includes('API')) {
+          errorMessage = 'Service temporarily unavailable. Please try again in a moment.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       // Make sure we show the error to the user
-      setShowError(error instanceof Error ? error.message : t('failedToGenerate'));
+      setShowError(errorMessage);
       
       // Don't close the modal on error so user can try again
       console.log('Keeping modal open due to error');

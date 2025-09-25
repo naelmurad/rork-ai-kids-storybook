@@ -402,17 +402,32 @@ export default function StoryReader({ story, onClose }: StoryReaderProps) {
               !raw.includes('null') &&
               raw !== 'undefined' &&
               raw !== 'null' &&
-              raw !== '';
-            const imageUri = hasValidImage 
-              ? (raw.startsWith('data:') ? raw : `data:image/png;base64,${raw}`)
-              : null;
+              raw !== '' &&
+              raw !== 'data:image/png;base64,' &&
+              raw !== 'data:image/jpeg;base64,' &&
+              raw !== 'data:image/jpg;base64,';
+            
+            let imageUri: string | null = null;
+            if (hasValidImage) {
+              try {
+                imageUri = raw.startsWith('data:') ? raw : `data:image/png;base64,${raw}`;
+                // Additional validation - check if the data URI is properly formed
+                if (imageUri === 'data:image/png;base64,' || imageUri === 'data:image/jpeg;base64,' || imageUri === 'data:image/jpg;base64,') {
+                  imageUri = null;
+                }
+              } catch (error) {
+                console.error(`Error creating image URI for page ${index + 1}:`, error);
+                imageUri = null;
+              }
+            }
             
             console.log(`Page ${index + 1} image validation:`, {
               hasImageBase64: !!raw,
               imageLength: raw.length || 0,
               imagePreview: raw.substring(0, 50) || 'empty',
               hasValidImage,
-              usesDataPrefix: raw.startsWith('data:')
+              usesDataPrefix: raw.startsWith('data:'),
+              finalImageUri: imageUri ? 'valid' : 'null'
             });
             
             return (
@@ -422,7 +437,7 @@ export default function StoryReader({ story, onClose }: StoryReaderProps) {
               story.language === 'ar' && styles.rtlPage
             ]}>
               <View style={styles.pageContent}>
-                {imageUri ? (
+                {imageUri && imageUri.length > 25 ? (
                   <View style={styles.fullPageImageContainer}>
                     <Image
                       source={{ uri: imageUri }}
@@ -430,6 +445,7 @@ export default function StoryReader({ story, onClose }: StoryReaderProps) {
                       resizeMode="cover"
                       onError={(error) => {
                         console.error(`Image load error for page ${index + 1}:`, error.nativeEvent?.error);
+                        console.error(`Failed image URI: ${imageUri?.substring(0, 100)}...`);
                       }}
                       onLoad={() => {
                         console.log(`Image loaded successfully for page ${index + 1}`);
