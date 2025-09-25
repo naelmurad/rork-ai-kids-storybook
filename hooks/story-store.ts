@@ -311,15 +311,17 @@ export const [StoryProvider, useStories] = createContextHook(() => {
           }
           
           // Add page to array with better validation
-          const validImageBase64 = imageBase64 && 
-            typeof imageBase64 === 'string' && 
-            imageBase64.trim() !== '' && 
-            imageBase64.length > 10 && 
-            !imageBase64.includes('undefined') &&
-            !imageBase64.includes('null') &&
-            imageBase64 !== 'undefined' &&
-            imageBase64 !== 'null'
-            ? imageBase64 : '';
+          const validImageBase64 = (() => {
+            if (!imageBase64 || typeof imageBase64 !== 'string') return '';
+            const trimmed = imageBase64.trim();
+            if (trimmed === '' || trimmed.length < 50) return '';
+            if (trimmed === 'undefined' || trimmed === 'null') return '';
+            if (trimmed.includes('undefined') || trimmed.includes('null')) return '';
+            if (trimmed === 'data:image/png;base64,' || 
+                trimmed === 'data:image/jpeg;base64,' || 
+                trimmed === 'data:image/jpg;base64,') return '';
+            return trimmed;
+          })();
             
           pages.push({
             id: `page-${i}`,

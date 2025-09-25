@@ -395,24 +395,27 @@ export default function StoryReader({ story, onClose }: StoryReaderProps) {
         >
           {story.pages.map((page, index) => {
             const raw = page.imageBase64 ?? '';
-            const hasValidImage = typeof raw === 'string' && 
-              raw.trim() !== '' && 
-              raw.length > 10 && 
-              !raw.includes('undefined') &&
-              !raw.includes('null') &&
-              raw !== 'undefined' &&
-              raw !== 'null' &&
-              raw !== '' &&
-              raw !== 'data:image/png;base64,' &&
-              raw !== 'data:image/jpeg;base64,' &&
-              raw !== 'data:image/jpg;base64,';
+            
+            // More robust image validation
+            const hasValidImage = (() => {
+              if (!raw || typeof raw !== 'string') return false;
+              const trimmed = raw.trim();
+              if (trimmed === '' || trimmed.length < 50) return false;
+              if (trimmed === 'undefined' || trimmed === 'null') return false;
+              if (trimmed.includes('undefined') || trimmed.includes('null')) return false;
+              if (trimmed === 'data:image/png;base64,' || 
+                  trimmed === 'data:image/jpeg;base64,' || 
+                  trimmed === 'data:image/jpg;base64,') return false;
+              return true;
+            })();
             
             let imageUri: string | null = null;
             if (hasValidImage) {
               try {
                 imageUri = raw.startsWith('data:') ? raw : `data:image/png;base64,${raw}`;
-                // Additional validation - check if the data URI is properly formed
-                if (imageUri === 'data:image/png;base64,' || imageUri === 'data:image/jpeg;base64,' || imageUri === 'data:image/jpg;base64,') {
+                // Final validation - ensure the URI has actual data
+                const base64Part = imageUri.split(',')[1];
+                if (!base64Part || base64Part.length < 20) {
                   imageUri = null;
                 }
               } catch (error) {
@@ -423,10 +426,8 @@ export default function StoryReader({ story, onClose }: StoryReaderProps) {
             
             console.log(`Page ${index + 1} image validation:`, {
               hasImageBase64: !!raw,
-              imageLength: raw.length || 0,
-              imagePreview: raw.substring(0, 50) || 'empty',
+              imageLength: raw?.length || 0,
               hasValidImage,
-              usesDataPrefix: raw.startsWith('data:'),
               finalImageUri: imageUri ? 'valid' : 'null'
             });
             
@@ -437,7 +438,7 @@ export default function StoryReader({ story, onClose }: StoryReaderProps) {
               story.language === 'ar' && styles.rtlPage
             ]}>
               <View style={styles.pageContent}>
-                {imageUri && imageUri.length > 25 ? (
+                {imageUri ? (
                   <View style={styles.fullPageImageContainer}>
                     <Image
                       source={{ uri: imageUri }}
@@ -445,7 +446,6 @@ export default function StoryReader({ story, onClose }: StoryReaderProps) {
                       resizeMode="cover"
                       onError={(error) => {
                         console.error(`Image load error for page ${index + 1}:`, error.nativeEvent?.error);
-                        console.error(`Failed image URI: ${imageUri?.substring(0, 100)}...`);
                       }}
                       onLoad={() => {
                         console.log(`Image loaded successfully for page ${index + 1}`);
