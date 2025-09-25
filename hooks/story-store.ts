@@ -531,25 +531,85 @@ Make exactly ${expectedPages} pages. Use ${request.childName} as the main charac
 
   // Simple test story generation for debugging
   const generateTestStory = useCallback(async (request: StoryGenerationRequest): Promise<Story> => {
-    console.log('=== GENERATING TEST STORY ===');
+    console.log('=== GENERATING TEST STORY WITH ILLUSTRATIONS ===');
     console.log('Test request:', request);
     
     setIsGenerating(true);
     setGenerationProgress(0);
     
     try {
-      // Create a simple test story without API calls
-      setGenerationProgress(50);
+      setGenerationProgress(20);
       
-      const expectedPages = request.pageCount || 5;
+      const expectedPages = request.pageCount || 3; // Fewer pages for testing
       const pages: StoryPage[] = [];
       
-      for (let i = 0; i < expectedPages; i++) {
-        pages.push({
-          id: `page-${i}`,
-          text: `Page ${i + 1}: ${request.childName} went on a ${request.theme} adventure. This is a test story to verify the system is working.`,
-          imageBase64: ''
-        });
+      // Generate test story with actual illustrations
+      if (request.includeIllustrations) {
+        console.log('Generating test illustrations...');
+        
+        for (let i = 0; i < expectedPages; i++) {
+          const pageText = `Page ${i + 1}: ${request.childName} went on a ${request.theme} adventure. This is a test story to verify the illustration system is working.`;
+          let imageBase64 = '';
+          
+          try {
+            console.log(`Generating test illustration ${i + 1}/${expectedPages}...`);
+            
+            // Simple illustration prompt for testing
+            const testPrompt = `Children's book illustration: A ${request.childAge}-year-old ${request.gender} named ${request.childName} on a ${request.theme} adventure. Cartoon style, colorful, friendly, safe for children. Page ${i + 1} of ${expectedPages}.`;
+            
+            const imageResponse = await fetch('https://toolkit.rork.com/images/generate/', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                prompt: testPrompt,
+                size: '1024x1024'
+              })
+            });
+
+            if (imageResponse.ok) {
+              const imageData = await imageResponse.json();
+              if (imageData.image && imageData.image.base64Data) {
+                imageBase64 = imageData.image.base64Data;
+                console.log(`✅ Test illustration ${i + 1} generated successfully (${imageBase64.length} chars)`);
+              } else {
+                console.log(`❌ Test illustration ${i + 1} - no image data in response:`, imageData);
+              }
+            } else {
+              const errorText = await imageResponse.text();
+              console.log(`❌ Test illustration ${i + 1} API error ${imageResponse.status}:`, errorText);
+            }
+            
+            // Small delay between requests
+            if (i < expectedPages - 1) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            
+          } catch (error) {
+            console.error(`❌ Error generating test illustration ${i + 1}:`, error);
+          }
+          
+          pages.push({
+            id: `page-${i}`,
+            text: pageText,
+            imageBase64: imageBase64
+          });
+          
+          const progress = 20 + ((i + 1) / expectedPages) * 60;
+          setGenerationProgress(progress);
+        }
+        
+        const pagesWithImages = pages.filter(p => p.imageBase64 && p.imageBase64.length > 10).length;
+        console.log(`✅ Test story complete: ${pagesWithImages}/${expectedPages} pages have illustrations`);
+        
+      } else {
+        // Text-only test story
+        for (let i = 0; i < expectedPages; i++) {
+          pages.push({
+            id: `page-${i}`,
+            text: `Page ${i + 1}: ${request.childName} went on a ${request.theme} adventure. This is a test story to verify the system is working.`,
+            imageBase64: ''
+          });
+        }
       }
       
       setGenerationProgress(100);
@@ -562,7 +622,7 @@ Make exactly ${expectedPages} pages. Use ${request.childName} as the main charac
         theme: request.theme,
         language: request.language,
         pages,
-        includeIllustrations: false,
+        includeIllustrations: request.includeIllustrations || false,
         gender: request.gender,
         createdAt: new Date().toISOString()
       };
@@ -572,11 +632,11 @@ Make exactly ${expectedPages} pages. Use ${request.childName} as the main charac
       const updatedStories = [story, ...currentStories];
       console.log(`Saving test story "${story.title}" to storage`);
       await saveStories(updatedStories);
-      console.log('Test story saved successfully');
+      console.log('✅ Test story saved successfully');
       
       return story;
     } catch (error) {
-      console.error('Test story generation failed:', error);
+      console.error('❌ Test story generation failed:', error);
       throw error;
     } finally {
       setIsGenerating(false);
@@ -590,7 +650,8 @@ Make exactly ${expectedPages} pages. Use ${request.childName} as the main charac
     isGenerating,
     generationProgress,
     generateStory,
+    generateTestStory,
     deleteStory,
     clearAllStories
-  }), [storiesQuery.data, storiesQuery.isLoading, isGenerating, generationProgress, generateStory, deleteStory, clearAllStories]);
+  }), [storiesQuery.data, storiesQuery.isLoading, isGenerating, generationProgress, generateStory, generateTestStory, deleteStory, clearAllStories]);
 });

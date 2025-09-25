@@ -30,7 +30,7 @@ import { useAds } from '@/hooks/ad-store';
 import DebugConsole from '@/components/DebugConsole';
 
 export default function HomeScreen() {
-  const { stories, isLoading, isGenerating, generationProgress, generateStory } = useStories();
+  const { stories, isLoading, isGenerating, generationProgress, generateStory, generateTestStory } = useStories();
   const { 
     settings, 
     usageLimits, 
@@ -1038,7 +1038,39 @@ export default function HomeScreen() {
                 disabled={isGenerating}
               >
                 <Text style={styles.debugButtonText}>
-                  {isGenerating ? 'Generating...' : '🧪 Create Test Story'}
+                  {isGenerating ? 'Generating...' : '🧪 Create Test Story (Text Only)'}
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.debugButton}
+                onPress={async () => {
+                  console.log('=== CREATING TEST STORY WITH ILLUSTRATIONS ===');
+                  try {
+                    const testRequest: StoryGenerationRequest = {
+                      childName: 'Test Child',
+                      childAge: 5,
+                      theme: 'adventure',
+                      language: 'en',
+                      pageCount: 3,
+                      gender: 'boy',
+                      includeIllustrations: true
+                    };
+                    
+                    console.log('Test illustration request:', testRequest);
+                    const story = await generateTestStory(testRequest);
+                    console.log('Test illustrated story created successfully:', story.title);
+                    setSelectedStory(story);
+                    Alert.alert('Success', 'Test illustrated story created successfully!');
+                  } catch (error) {
+                    console.error('Test illustrated story creation failed:', error);
+                    Alert.alert('Test Failed', `Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                  }
+                }}
+                disabled={isGenerating}
+              >
+                <Text style={styles.debugButtonText}>
+                  {isGenerating ? 'Generating...' : '🎨 Test Illustrated Story'}
                 </Text>
               </TouchableOpacity>
               
