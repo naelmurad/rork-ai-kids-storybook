@@ -305,14 +305,19 @@ export default function HomeScreen() {
       avatarUri: avatarUri ? 'provided' : 'not provided'
     });
     
-    // Add debugging for the Rork Toolkit SDK
+    // Test API connectivity instead of SDK import
+    console.log('Checking API connectivity...');
     try {
-      const { generateText } = await import('@rork/toolkit-sdk');
-      console.log('Rork Toolkit SDK imported successfully:', typeof generateText);
-    } catch (sdkError) {
-      console.error('Failed to import Rork Toolkit SDK:', sdkError);
-      setShowError('SDK import failed: ' + (sdkError instanceof Error ? sdkError.message : String(sdkError)));
-      return;
+      const testResponse = await fetch('https://toolkit.rork.com/text/llm/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'test' }]
+        })
+      });
+      console.log('API connectivity test result:', testResponse.status);
+    } catch (apiError) {
+      console.warn('API connectivity test failed, but continuing:', apiError);
     }
     
     // Test API connection first (but don't block if it fails)

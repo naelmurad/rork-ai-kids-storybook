@@ -96,10 +96,8 @@ export const [StoryProvider, useStories] = createContextHook(() => {
         gender: request.gender
       });
       
-      // Use the new Rork Toolkit SDK for text generation
-      const { generateText } = await import('@rork/toolkit-sdk');
-      
-      console.log('Using Rork Toolkit SDK for story generation...');
+      // Use direct API call for text generation with better error handling
+      console.log('Making direct API call for story generation...');
       
       const storyPrompt = `Create a ${request.theme} story for ${request.childName}, age ${request.childAge}. The child's name is "${request.childName}" and they are ${request.childAge} years old. IMPORTANT: Write the ENTIRE story (including the child's name and all text) in ${getLanguageName(request.language)} language. The main character should be the SAME PERSON throughout the entire story - ${request.childName} is a ${request.childAge}-year-old ${request.gender}. Keep the character consistent in appearance, personality, and actions across all pages. CRITICAL: Use ONLY the name "${request.childName}" throughout the story - this name should appear in ${getLanguageName(request.language)} language in the story text. Format the response as JSON with this exact structure:
       {
@@ -110,7 +108,30 @@ export const [StoryProvider, useStories] = createContextHook(() => {
       }
       Make sure there are exactly ${request.pageCount || 5} pages. Use the child's name ${request.childName} throughout the story in ${getLanguageName(request.language)} language. Remember: ${request.childName} is the ONLY main character and should remain consistent.`;
       
-      const storyResponse = await generateText(storyPrompt);
+      const textResponse = await fetch('https://toolkit.rork.com/text/llm/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: 'user',
+              content: storyPrompt
+            }
+          ]
+        })
+      });
+      
+      if (!textResponse.ok) {
+        const errorText = await textResponse.text();
+        console.error('Text generation API error:', textResponse.status, errorText);
+        throw new Error(`Text generation failed: ${textResponse.status} - ${errorText}`);
+      }
+      
+      const textData = await textResponse.json();
+      console.log('Raw API response:', textData);
+      const storyResponse = textData.text || textData.content || textData.message || textData.response || '';
       
       console.log('Story generation response received:', {
         responseLength: storyResponse?.length || 0,
