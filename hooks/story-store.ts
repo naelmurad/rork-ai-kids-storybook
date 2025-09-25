@@ -513,13 +513,19 @@ Make exactly ${expectedPages} pages. Use ${request.childName} as the main charac
       console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       console.error('Request that failed:', JSON.stringify(request, null, 2));
       
+      // Force cleanup on error
       setIsGenerating(false);
       setGenerationProgress(0);
+      
+      // Re-throw the error for the UI to handle
       throw error;
     } finally {
       console.log('=== STORY GENERATION CLEANUP ===');
-      setIsGenerating(false);
-      setGenerationProgress(0);
+      // Ensure cleanup always happens
+      setTimeout(() => {
+        setIsGenerating(false);
+        setGenerationProgress(0);
+      }, 100);
     }
   }, [storiesQuery.data, saveStories]);
 

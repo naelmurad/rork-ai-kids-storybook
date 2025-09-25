@@ -523,9 +523,15 @@ export default function HomeScreen() {
       console.log('Closing modal and showing story...');
       
       // Close modal and show story after generation is complete
+      console.log('Story generation completed - updating UI states');
       setShowCreateModal(false);
       resetFormState();
-      setSelectedStory(story);
+      
+      // Small delay to ensure modal closes before opening story reader
+      setTimeout(() => {
+        console.log('Opening story reader for:', story.title);
+        setSelectedStory(story);
+      }, 300);
       
       console.log('=== STORY CREATION COMPLETED SUCCESSFULLY ===');
       
@@ -1033,6 +1039,26 @@ export default function HomeScreen() {
           ]}
           onPress={() => {
             console.log('Create story button pressed, canCreateStory:', canCreateStory);
+            
+            // Ensure no other modals are open first
+            if (selectedStory || showError || showPremiumUpgrade) {
+              console.log('Other modals are open, closing them first');
+              setSelectedStory(null);
+              setShowError(null);
+              setShowPremiumUpgrade(false);
+              
+              // Small delay before opening create modal
+              setTimeout(() => {
+                if (canCreateStory) {
+                  resetFormState();
+                  setShowCreateModal(true);
+                } else {
+                  setShowPremiumUpgrade(true);
+                }
+              }, 200);
+              return;
+            }
+            
             if (canCreateStory) {
               resetFormState();
               setShowCreateModal(true);
@@ -1139,7 +1165,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Banner Ad */}
-        <BannerAd size="medium" style={{ marginHorizontal: 20 }} />
+        <BannerAd size="medium" style={styles.bannerAdMedium} />
 
         <View style={styles.storiesSection}>
           <Text style={styles.sectionTitle}>{t('yourStories')}</Text>
@@ -1169,7 +1195,7 @@ export default function HomeScreen() {
                 />
                 {/* Show banner ad after every 3rd story */}
                 {(index + 1) % 3 === 0 && (
-                  <BannerAd size="small" style={{ marginHorizontal: 20, marginVertical: 8 }} />
+                  <BannerAd size="small" style={styles.bannerAdSmall} />
                 )}
               </React.Fragment>
             ))
@@ -1737,5 +1763,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#1976D2',
+  },
+  bannerAdMedium: {
+    marginHorizontal: 20,
+  },
+  bannerAdSmall: {
+    marginHorizontal: 20,
+    marginVertical: 8,
   },
 });
