@@ -249,46 +249,55 @@ export default function HomeScreen() {
   };
 
   const handleCreateStory = async () => {
-    // Check usage limits
-    if (!canCreateStory) {
-      setShowPremiumUpgrade(true);
-      return;
-    }
-
-    // Validate form
-    if (!validateForm()) {
-      setShowError(t('pleaseFillRequiredFields'));
-      return;
-    }
-
-    // Convert Arabic numerals to English numerals if needed
-    const normalizedAge = childAge.replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString());
-    const age = parseInt(normalizedAge);
-
-    // Handle name conversion based on selected language
-    let finalChildName = childName.trim();
+    console.log('=== STORY CREATION STARTED ===');
     
-    // If the name is in Arabic and story language is not Arabic, transliterate it
-    if (/[\u0600-\u06FF]/.test(finalChildName) && selectedLanguage !== 'ar') {
-      finalChildName = transliterateArabicName(finalChildName);
-      console.log(`Transliterated Arabic name from ${childName} to ${finalChildName} for ${selectedLanguage} story`);
-    }
-    
-    console.log(`Creating story in ${selectedLanguage} language with name: ${finalChildName}`);
-
-    const finalTheme = selectedTheme === 'custom' ? customTheme : selectedTheme;
-    const request: StoryGenerationRequest = {
-      childName: finalChildName,
-      childAge: age,
-      theme: finalTheme,
-      language: selectedLanguage,
-      profileId: selectedProfile?.id,
-      pageCount,
-      gender: selectedGender,
-    };
-
     try {
+      // Check usage limits
+      if (!canCreateStory) {
+        console.log('Cannot create story - usage limit reached');
+        setShowPremiumUpgrade(true);
+        return;
+      }
+
+      // Validate form
+      if (!validateForm()) {
+        console.log('Form validation failed');
+        setShowError(t('pleaseFillRequiredFields'));
+        return;
+      }
+
+      console.log('Form validation passed, proceeding with story creation...');
+
+      // Convert Arabic numerals to English numerals if needed
+      const normalizedAge = childAge.replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString());
+      const age = parseInt(normalizedAge);
+
+      // Handle name conversion based on selected language
+      let finalChildName = childName.trim();
+      
+      // If the name is in Arabic and story language is not Arabic, transliterate it
+      if (/[\u0600-\u06FF]/.test(finalChildName) && selectedLanguage !== 'ar') {
+        finalChildName = transliterateArabicName(finalChildName);
+        console.log(`Transliterated Arabic name from ${childName} to ${finalChildName} for ${selectedLanguage} story`);
+      }
+      
+      console.log(`Creating story in ${selectedLanguage} language with name: ${finalChildName}`);
+
+      const finalTheme = selectedTheme === 'custom' ? customTheme : selectedTheme;
+      const request: StoryGenerationRequest = {
+        childName: finalChildName,
+        childAge: age,
+        theme: finalTheme,
+        language: selectedLanguage,
+        profileId: selectedProfile?.id,
+        pageCount,
+        gender: selectedGender,
+      };
+
+      console.log('Story request prepared:', request);
+
       // Save the selected gender preference
+      console.log('Saving gender preference...');
       await updateSettings({ lastSelectedGender: selectedGender });
       
       let finalAvatarUri = avatarUri || selectedProfile?.avatar;
@@ -310,20 +319,32 @@ export default function HomeScreen() {
         }
       }
       
+      console.log('Starting story generation...');
+      
       // Generate the story and wait for completion
       const story = await generateStory({
         ...request,
         includeIllustrations: storyMode === 'illustrated'
       }, finalAvatarUri);
       
+      console.log('Story generation completed successfully!');
+      
       // Only after story is completely generated, increment usage and show it
+      console.log('Incrementing daily usage...');
       await incrementDailyUsage();
       
       // Show interstitial ad occasionally after story creation
       if (shouldShowAd(3)) {
-        await loadInterstitialAd();
-        await showInterstitialAd();
+        console.log('Loading and showing interstitial ad...');
+        try {
+          await loadInterstitialAd();
+          await showInterstitialAd();
+        } catch (adError) {
+          console.log('Ad failed to load/show, continuing...', adError);
+        }
       }
+      
+      console.log('Closing modal and showing story...');
       
       // Close modal and show story after generation is complete
       setShowCreateModal(false);
@@ -340,9 +361,20 @@ export default function HomeScreen() {
       setStoryMode('illustrated');
       setSelectedGender('boy');
       setValidationErrors({});
+      
+      console.log('=== STORY CREATION COMPLETED SUCCESSFULLY ===');
+      
     } catch (error) {
-      console.error('Error generating story:', error);
-      setShowError(t('failedToGenerate'));
+      console.error('=== STORY CREATION FAILED ===');
+      console.error('Error details:', error);
+      console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      
+      // Make sure we show the error to the user
+      setShowError(error instanceof Error ? error.message : t('failedToGenerate'));
+      
+      // Don't close the modal on error so user can try again
+      console.log('Keeping modal open due to error');
     }
   };
 

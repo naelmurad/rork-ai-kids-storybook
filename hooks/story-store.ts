@@ -69,7 +69,8 @@ export const [StoryProvider, useStories] = createContextHook(() => {
   const { mutateAsync: saveStories } = saveStoriesMutation;
 
   const generateStory = useCallback(async (request: StoryGenerationRequest, childAvatar?: string): Promise<Story> => {
-    console.log('Starting story generation with request:', request);
+    console.log('=== STORY STORE: Starting story generation ===');
+    console.log('Request:', request);
     console.log('Avatar provided:', !!childAvatar, typeof childAvatar);
     
     setIsGenerating(true);
@@ -77,7 +78,7 @@ export const [StoryProvider, useStories] = createContextHook(() => {
 
     try {
       // Generate story text
-      console.log('Generating story text...');
+      console.log('=== STORY STORE: Generating story text ===');
       setGenerationProgress(20);
       
       const storyResponse = await fetch('https://toolkit.rork.com/text/llm/', {
