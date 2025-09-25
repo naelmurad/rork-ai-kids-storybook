@@ -73,6 +73,7 @@ export default function HomeScreen() {
   const [customTheme, setCustomTheme] = useState('');
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [showDebugOptions, setShowDebugOptions] = useState(false);
 
   const convertToCartoonAvatar = async (imageBase64: string): Promise<string> => {
     try {
@@ -246,6 +247,31 @@ export default function HomeScreen() {
 
     setValidationErrors(errors);
     return !hasErrors;
+  };
+
+  // Simple test story generation for debugging
+  const handleCreateTestStory = async () => {
+    console.log('=== CREATING TEST STORY ===');
+    try {
+      const testRequest: StoryGenerationRequest = {
+        childName: 'Test Child',
+        childAge: 5,
+        theme: 'adventure',
+        language: 'en',
+        pageCount: 3,
+        gender: 'boy',
+        includeIllustrations: false
+      };
+      
+      console.log('Test request:', testRequest);
+      const story = await generateStory(testRequest);
+      console.log('Test story created successfully:', story.title);
+      setSelectedStory(story);
+      Alert.alert('Success', 'Test story created successfully!');
+    } catch (error) {
+      console.error('Test story creation failed:', error);
+      Alert.alert('Test Failed', `Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   // Test function to check API connectivity
@@ -992,6 +1018,59 @@ export default function HomeScreen() {
           </LinearGradient>
         </TouchableOpacity>
 
+        {/* Debug Options */}
+        <View style={styles.debugSection}>
+          <TouchableOpacity
+            style={styles.debugToggle}
+            onPress={() => setShowDebugOptions(!showDebugOptions)}
+          >
+            <Text style={styles.debugToggleText}>
+              {showDebugOptions ? '🔧 Hide Debug' : '🔧 Debug Options'}
+            </Text>
+          </TouchableOpacity>
+          
+          {showDebugOptions && (
+            <View style={styles.debugOptions}>
+              <TouchableOpacity
+                style={styles.debugButton}
+                onPress={handleCreateTestStory}
+                disabled={isGenerating}
+              >
+                <Text style={styles.debugButtonText}>
+                  {isGenerating ? 'Generating...' : '🧪 Create Test Story'}
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.debugButton}
+                onPress={async () => {
+                  console.log('=== API CONNECTIVITY TEST ===');
+                  const result = await testAPIConnection();
+                  Alert.alert('API Test', result ? 'API is working!' : 'API connection failed');
+                }}
+              >
+                <Text style={styles.debugButtonText}>🌐 Test API Connection</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.debugButton}
+                onPress={() => {
+                  console.log('=== CURRENT APP STATE ===');
+                  console.log('Stories count:', stories.length);
+                  console.log('Is generating:', isGenerating);
+                  console.log('Generation progress:', generationProgress);
+                  console.log('Can create story:', canCreateStory);
+                  console.log('Settings:', settings);
+                  console.log('Usage limits:', usageLimits);
+                  Alert.alert('State Logged', 'Check the debug console for current app state');
+                }}
+              >
+                <Text style={styles.debugButtonText}>📊 Log App State</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+
         {/* Banner Ad */}
         <BannerAd size="medium" style={{ marginHorizontal: 20 }} />
 
@@ -1548,5 +1627,43 @@ const styles = StyleSheet.create({
   planText: {
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  debugSection: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  debugToggle: {
+    backgroundColor: '#F0F0F0',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  debugToggleText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  debugOptions: {
+    backgroundColor: '#FFF',
+    borderRadius: 8,
+    padding: 16,
+    gap: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  debugButton: {
+    backgroundColor: '#E3F2FD',
+    padding: 12,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  debugButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1976D2',
   },
 });
