@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback, useMemo } from 'react';
 import { Story, StoryGenerationRequest, StoryPage } from '@/types/story';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { generateText } from '@rork/toolkit-sdk';
 
 const STORIES_KEY = 'stories';
 
@@ -120,40 +121,17 @@ export const [StoryProvider, useStories] = createContextHook(() => {
 }
 Make exactly ${expectedPages} pages. Use ${request.childName} as the main character throughout.`;
       
-      // Add timeout to API call
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      // Use the correct Rork Toolkit SDK for text generation
+      const storyResponse = await generateText({
+        messages: [
+          {
+            role: 'user',
+            content: storyPrompt
+          }
+        ]
+      });
       
-      let textResponse;
-      try {
-        textResponse = await fetch('https://toolkit.rork.com/text/llm/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            messages: [
-              {
-                role: 'user',
-                content: storyPrompt
-              }
-            ]
-          }),
-          signal: controller.signal
-        });
-      } finally {
-        clearTimeout(timeoutId);
-      }
-      
-      if (!textResponse.ok) {
-        const errorText = await textResponse.text();
-        console.error('Text generation API error:', textResponse.status, errorText);
-        throw new Error(`Story generation failed: ${textResponse.status}`);
-      }
-      
-      const textData = await textResponse.json();
       console.log('Raw API response received');
-      const storyResponse = textData.text || textData.content || textData.message || textData.response || '';
       
       if (!storyResponse || storyResponse.length < 10) {
         throw new Error('Empty response from story generation API');
