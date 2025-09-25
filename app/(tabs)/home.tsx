@@ -489,8 +489,15 @@ export default function HomeScreen() {
                 
                 <View style={styles.avatarSection}>
                   <View style={styles.avatarContainer}>
-                    {avatarUri && avatarUri.trim() !== '' ? (
-                      <Image source={{ uri: avatarUri.startsWith('data:') ? avatarUri : `data:image/png;base64,${avatarUri}` }} style={styles.avatar} />
+                    {avatarUri && avatarUri.trim() !== '' && avatarUri !== 'undefined' && avatarUri !== 'null' ? (
+                      <Image 
+                        source={{ uri: avatarUri.startsWith('data:') ? avatarUri : `data:image/png;base64,${avatarUri}` }} 
+                        style={styles.avatar}
+                        onError={(error) => {
+                          console.log('Avatar image load error:', error.nativeEvent?.error);
+                          setAvatarUri(null);
+                        }}
+                      />
                     ) : (
                       <View style={styles.avatarPlaceholder}>
                         <Text style={styles.avatarPlaceholderText}>

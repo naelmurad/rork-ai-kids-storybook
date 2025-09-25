@@ -69,12 +69,17 @@ export const [StoryProvider, useStories] = createContextHook(() => {
   const { mutateAsync: saveStories } = saveStoriesMutation;
 
   const generateStory = useCallback(async (request: StoryGenerationRequest, childAvatar?: string): Promise<Story> => {
+    console.log('Starting story generation with request:', request);
+    console.log('Avatar provided:', !!childAvatar, typeof childAvatar);
+    
     setIsGenerating(true);
     setGenerationProgress(0);
 
     try {
       // Generate story text
+      console.log('Generating story text...');
       setGenerationProgress(20);
+      
       const storyResponse = await fetch('https://toolkit.rork.com/text/llm/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -100,10 +105,12 @@ export const [StoryProvider, useStories] = createContextHook(() => {
       });
 
       if (!storyResponse.ok) {
-        throw new Error('Failed to generate story');
+        console.error('Story generation failed:', storyResponse.status, storyResponse.statusText);
+        throw new Error(`Failed to generate story: ${storyResponse.status}`);
       }
 
       const storyData = await storyResponse.json();
+      console.log('Story generation response received');
       let parsedStory;
       
       try {
@@ -144,6 +151,26 @@ export const [StoryProvider, useStories] = createContextHook(() => {
       const totalPages = Math.min(parsedStory.pages.length, expectedPages);
       
       if (request.includeIllustrations) {
+        console.log('Starting illustration generation...');
+        
+        // Validate and clean avatar URI first
+        let validAvatarUri = '';
+        if (childAvatar && typeof childAvatar === 'string' && childAvatar.trim() !== '') {
+          try {
+            if (childAvatar.startsWith('data:image/')) {
+              validAvatarUri = childAvatar.replace(/^data:image\/[a-z]+;base64,/, '');
+            } else if (childAvatar.startsWith('http')) {
+              validAvatarUri = childAvatar;
+            } else {
+              validAvatarUri = childAvatar;
+            }
+            console.log('Valid avatar URI prepared for illustrations');
+          } catch (error) {
+            console.error('Error processing avatar URI:', error);
+            validAvatarUri = '';
+          }
+        }
+        
         // Create detailed, consistent character descriptions
         const getCharacterDescription = (gender: string, age: number) => {
           if (gender === 'girl') {
@@ -162,69 +189,46 @@ export const [StoryProvider, useStories] = createContextHook(() => {
         const characterInfo = getCharacterDescription(request.gender || 'boy', request.childAge);
         const baseCharacterPrompt = `MAIN CHARACTER DESCRIPTION (MUST BE IDENTICAL IN ALL PAGES): ${characterInfo.appearance}. CHARACTER NAME: ${request.childName}. CRITICAL: This exact character appearance must be maintained throughout all illustrations - same hair, same eyes, same face, same clothes, same proportions.`;
         
-        // Generate images in parallel for better speed
-        console.log('Starting parallel image generation for faster processing...');
+        // Generate images sequentially to avoid overwhelming the API and reduce crashes
+        console.log('Starting sequential image generation for stability...');
         
-        const imagePromises = Array.from({ length: totalPages }, async (_, i) => {
+        for (let i = 0; i < totalPages; i++) {
           const page = parsedStory.pages[i];
           let imageBase64 = '';
-          let attempts = 0;
-          const maxAttempts = 2;
           
-          // Retry logic for image generation
-          while (!imageBase64 && attempts < maxAttempts) {
-            attempts++;
-            console.log(`Attempt ${attempts}/${maxAttempts} for page ${i + 1}`);
+          try {
+            console.log(`Generating illustration for page ${i + 1}/${totalPages}...`);
             
-            try {
-              if (childAvatar) {
-                // Use image editing API to incorporate the child's avatar
-                console.log(`Generating illustration with avatar for page ${i + 1}...`);
-                console.log(`Avatar URI type: ${typeof childAvatar}, length: ${childAvatar.length}`);
-                
-                // Handle different avatar formats
+            // Try avatar-based generation first if we have a valid avatar
+            if (validAvatarUri && validAvatarUri.length > 10) {
+              try {
                 let avatarBase64 = '';
-                if (childAvatar.startsWith('data:image/')) {
-                  // Extract base64 from data URI
-                  avatarBase64 = childAvatar.replace(/^data:image\/[a-z]+;base64,/, '');
-                  console.log(`Extracted base64 from data URI, length: ${avatarBase64.length}`);
-                } else if (childAvatar.startsWith('http')) {
-                  // For HTTP URLs, we need to fetch and convert to base64
-                  console.log(`Fetching image from URL: ${childAvatar}`);
-                  try {
-                    const imageResponse = await fetch(childAvatar);
-                    if (imageResponse.ok) {
-                      const imageBlob = await imageResponse.blob();
-                      const reader = new FileReader();
-                      avatarBase64 = await new Promise((resolve, reject) => {
-                        reader.onload = () => {
-                          const result = reader.result as string;
-                          resolve(result.replace(/^data:image\/[a-z]+;base64,/, ''));
-                        };
-                        reader.onerror = reject;
-                        reader.readAsDataURL(imageBlob);
-                      });
-                      console.log(`Converted URL to base64, length: ${avatarBase64.length}`);
-                    } else {
-                      console.error(`Failed to fetch avatar from URL: ${imageResponse.status}`);
-                      avatarBase64 = '';
-                    }
-                  } catch (error) {
-                    console.error('Error fetching avatar from URL:', error);
-                    avatarBase64 = '';
+                
+                if (validAvatarUri.startsWith('http')) {
+                  // Fetch and convert URL to base64
+                  const imageResponse = await fetch(validAvatarUri);
+                  if (imageResponse.ok) {
+                    const imageBlob = await imageResponse.blob();
+                    const reader = new FileReader();
+                    avatarBase64 = await new Promise((resolve, reject) => {
+                      reader.onload = () => {
+                        const result = reader.result as string;
+                        resolve(result.replace(/^data:image\/[a-z]+;base64,/, ''));
+                      };
+                      reader.onerror = reject;
+                      reader.readAsDataURL(imageBlob);
+                    });
                   }
                 } else {
-                  // Assume it's already base64
-                  avatarBase64 = childAvatar;
-                  console.log(`Using avatar as base64, length: ${avatarBase64.length}`);
+                  avatarBase64 = validAvatarUri;
                 }
                 
-                if (avatarBase64 && avatarBase64.length > 0) {
+                if (avatarBase64 && avatarBase64.length > 10) {
                   const editResponse = await fetch('https://toolkit.rork.com/images/edit/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                      prompt: `Create a children's book illustration for page ${i + 1} of ${expectedPages}. Scene: "${page.text}". Use the child from the provided avatar image as the ONLY main character. CRITICAL: The character must look EXACTLY like the avatar in every detail - same face, same hair, same features, same clothes. Make it ${characterInfo.style}, colorful, friendly, and safe for children. Theme: ${request.theme}. This is ${request.childName}, maintain identical appearance. NO OTHER CHILDREN in the scene. NO TEXT OR WRITING in the image.`,
+                      prompt: `Create a children's book illustration for page ${i + 1} of ${expectedPages}. Scene: "${page.text}". Use the child from the provided avatar image as the ONLY main character. CRITICAL: The character must look EXACTLY like the avatar in every detail - same face, same hair, same features. Make it ${characterInfo.style}, colorful, friendly, and safe for children. Theme: ${request.theme}. This is ${request.childName}, maintain identical appearance. NO OTHER CHILDREN in the scene. NO TEXT OR WRITING in the image.`,
                       images: [{ type: 'image', image: avatarBase64 }]
                     })
                   });
@@ -234,107 +238,49 @@ export const [StoryProvider, useStories] = createContextHook(() => {
                     if (editData.image && editData.image.base64Data) {
                       imageBase64 = editData.image.base64Data;
                       console.log(`Successfully generated illustration with avatar for page ${i + 1}`);
-                    } else {
-                      console.log(`Avatar editing returned empty image for page ${i + 1}`);
                     }
-                  } else {
-                    console.log(`Avatar editing failed for page ${i + 1}, status:`, editResponse.status);
-                    const errorText = await editResponse.text();
-                    console.log(`Error response:`, errorText);
                   }
-                } else {
-                  console.log(`Invalid avatar base64 for page ${i + 1}, skipping avatar editing`);
                 }
+              } catch (error) {
+                console.error(`Error with avatar-based generation for page ${i + 1}:`, error);
               }
-              
-              // Fallback to regular image generation if avatar editing fails or no avatar
-              if (!imageBase64) {
-                console.log(`Generating regular illustration for page ${i + 1}...`);
-                const imageResponse = await fetch('https://toolkit.rork.com/images/generate/', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    prompt: `Children's book illustration page ${i + 1} of ${expectedPages}. ${baseCharacterPrompt} SCENE: "${page.text}". Style: ${characterInfo.style}, colorful, friendly, safe for children. Theme: ${request.theme}. IMPORTANT: Show the SAME character ${request.childName} as described above. NO OTHER CHILDREN in the scene. NO TEXT OR WRITING in the image. Focus on the scene while keeping the character identical to previous pages.`,
-                    size: '512x512'
-                  })
-                });
-
-                if (imageResponse.ok) {
-                  const imageData = await imageResponse.json();
-                  if (imageData.image && imageData.image.base64Data) {
-                    imageBase64 = imageData.image.base64Data;
-                    console.log(`Successfully generated regular illustration for page ${i + 1}`);
-                  } else {
-                    console.log(`Image generation returned empty image for page ${i + 1}`);
-                  }
-                } else {
-                  console.log(`Image generation failed for page ${i + 1}, status:`, imageResponse.status);
-                  const errorText = await imageResponse.text();
-                  console.log(`Error response:`, errorText);
-                }
-              }
-            } catch (error) {
-              console.error(`Error generating image for page ${i + 1}, attempt ${attempts}:`, error);
             }
             
-            // If we still don't have an image and have attempts left, wait a bit before retrying
-            if (!imageBase64 && attempts < maxAttempts) {
-              console.log(`Retrying page ${i + 1} in 1 second...`);
-              await new Promise(resolve => setTimeout(resolve, 1000));
+            // Fallback to regular image generation if avatar editing fails or no avatar
+            if (!imageBase64) {
+              console.log(`Generating regular illustration for page ${i + 1}...`);
+              const imageResponse = await fetch('https://toolkit.rork.com/images/generate/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  prompt: `Children's book illustration page ${i + 1} of ${expectedPages}. ${baseCharacterPrompt} SCENE: "${page.text}". Style: ${characterInfo.style}, colorful, friendly, safe for children. Theme: ${request.theme}. IMPORTANT: Show the SAME character ${request.childName} as described above. NO OTHER CHILDREN in the scene. NO TEXT OR WRITING in the image. Focus on the scene while keeping the character identical to previous pages.`,
+                  size: '512x512'
+                })
+              });
+
+              if (imageResponse.ok) {
+                const imageData = await imageResponse.json();
+                if (imageData.image && imageData.image.base64Data) {
+                  imageBase64 = imageData.image.base64Data;
+                  console.log(`Successfully generated regular illustration for page ${i + 1}`);
+                }
+              }
             }
+          } catch (error) {
+            console.error(`Error generating image for page ${i + 1}:`, error);
           }
           
-          if (!imageBase64) {
-            console.warn(`Failed to generate image for page ${i + 1} after ${maxAttempts} attempts`);
-          }
-          
-          return {
-            index: i,
-            page: parsedStory.pages[i],
+          // Add page to array
+          pages.push({
+            id: `page-${i}`,
+            text: page.text,
             imageBase64: imageBase64 && imageBase64.trim() !== '' && imageBase64.length > 10 ? imageBase64 : ''
-          };
-        });
-        
-        // Process images in parallel with progress updates
-        const imageResults = await Promise.allSettled(imagePromises);
-        
-        console.log('Image generation results:', imageResults.map((result, index) => ({
-          index,
-          status: result.status,
-          hasImage: result.status === 'fulfilled' && result.value?.imageBase64 && result.value.imageBase64.length > 10
-        })));
-        
-        // Create pages array with proper ordering - ensure all pages are included
-        const pageResults = new Array(totalPages).fill(null);
-        
-        // Fill successful results
-        imageResults.forEach((result, promiseIndex) => {
-          if (result.status === 'fulfilled' && result.value) {
-            const { index, page, imageBase64 } = result.value;
-            if (index >= 0 && index < totalPages) {
-              pageResults[index] = {
-                id: `page-${index}`,
-                text: page.text,
-                imageBase64: imageBase64 && imageBase64.trim() !== '' && imageBase64.length > 10 ? imageBase64 : ''
-              };
-            }
-          }
-        });
-        
-        // Fill any missing pages with text-only versions
-        for (let i = 0; i < totalPages; i++) {
-          if (!pageResults[i] && parsedStory.pages[i]) {
-            console.log(`Creating fallback page for index ${i}`);
-            pageResults[i] = {
-              id: `page-${i}`,
-              text: parsedStory.pages[i].text,
-              imageBase64: ''
-            };
-          }
+          });
+          
+          // Update progress
+          const progress = 40 + ((i + 1) / totalPages) * 45;
+          setGenerationProgress(progress);
         }
-        
-        // Filter out any null entries and add to pages array
-        pages.push(...pageResults.filter(page => page !== null));
         
         console.log(`Created ${pages.length} pages out of ${totalPages} expected pages`);
         console.log('Pages with images:', pages.filter(p => p.imageBase64 && p.imageBase64.length > 10).length);
@@ -377,6 +323,11 @@ export const [StoryProvider, useStories] = createContextHook(() => {
       console.log('Story saved successfully');
 
       return story;
+    } catch (error) {
+      console.error('Story generation failed:', error);
+      setIsGenerating(false);
+      setGenerationProgress(0);
+      throw error;
     } finally {
       setIsGenerating(false);
       setGenerationProgress(0);

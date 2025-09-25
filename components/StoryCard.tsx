@@ -22,7 +22,10 @@ export default function StoryCard({ story, onPress }: StoryCardProps) {
     !firstPageImage.includes('undefined') &&
     !firstPageImage.includes('null') &&
     firstPageImage !== 'undefined' &&
-    firstPageImage !== 'null';
+    firstPageImage !== 'null' &&
+    firstPageImage !== '' &&
+    firstPageImage !== 'data:image/png;base64,' &&
+    firstPageImage !== 'data:image/jpeg;base64,';
   const imageUri = hasValidImage
     ? (firstPageImage.startsWith('data:') ? firstPageImage : `data:image/png;base64,${firstPageImage}`)
     : null;
