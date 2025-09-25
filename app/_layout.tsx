@@ -14,29 +14,34 @@ SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
 
-
-
 function RootLayoutNav() {
-  const { settings, updateSettings, currentLanguage } = useAppSettings();
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const { settings, updateSettings, currentLanguage, isLoading } = useAppSettings();
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
 
   useEffect(() => {
-    setShowOnboarding(!settings.hasSeenOnboarding || !settings.hasSelectedLanguage);
-  }, [settings.hasSeenOnboarding, settings.hasSelectedLanguage]);
+    if (!isLoading) {
+      const shouldShow = !settings.hasSeenOnboarding || !settings.hasSelectedLanguage;
+      setShowOnboarding(shouldShow);
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [isLoading, settings.hasSeenOnboarding, settings.hasSelectedLanguage]);
 
   const handleOnboardingComplete = async () => {
-    await updateSettings({ 
+    await updateSettings({
       hasSeenOnboarding: true,
-      hasSelectedLanguage: true 
+      hasSelectedLanguage: true,
     });
     setShowOnboarding(false);
   };
+
+  if (isLoading) {
+    return null;
+  }
 
   if (showOnboarding) {
     return <OnboardingScreen onComplete={handleOnboardingComplete} />;
   }
 
-  // Force re-render when language changes
   const stackKey = `stack-${currentLanguage}`;
 
   return (
@@ -48,17 +53,13 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  useEffect(() => {
-    SplashScreen.hideAsync();
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
       <AppSettingsProvider>
         <SubscriptionProvider>
           <AdProvider>
             <StoryProvider>
-              <GestureHandlerRootView style={styles.container}>
+              <GestureHandlerRootView style={styles.container} testID="root-gesture-container">
                 <RootLayoutNav />
               </GestureHandlerRootView>
             </StoryProvider>
