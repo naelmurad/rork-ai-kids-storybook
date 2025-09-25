@@ -85,10 +85,24 @@ export const [StoryProvider, useStories] = createContextHook(() => {
       console.log('Making API request to generate story text...');
       
       // Add timeout for the story generation API call
-      const storyGenerationTimeout = 30000; // 30 seconds
+      const storyGenerationTimeout = 45000; // 45 seconds for better reliability
+      
+      console.log('Making story generation API request...');
+      console.log('Request details:', {
+        childName: request.childName,
+        childAge: request.childAge,
+        theme: request.theme,
+        language: request.language,
+        pageCount: request.pageCount || 5,
+        gender: request.gender
+      });
+      
       const storyApiCall = fetch('https://toolkit.rork.com/text/llm/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({
           messages: [
             {
@@ -119,13 +133,19 @@ export const [StoryProvider, useStories] = createContextHook(() => {
       const storyResponse = await Promise.race([storyApiCall, storyTimeoutPromise]);
 
       if (!storyResponse.ok) {
-        const errorText = await storyResponse.text();
-        console.error('Story generation failed:', {
+        let errorText = 'Unknown error';
+        try {
+          errorText = await storyResponse.text();
+        } catch (e) {
+          console.error('Could not read error response:', e);
+        }
+        console.error('Story generation API failed:', {
           status: storyResponse.status,
           statusText: storyResponse.statusText,
-          errorBody: errorText
+          errorBody: errorText,
+          url: storyResponse.url
         });
-        throw new Error(`Failed to generate story: ${storyResponse.status} - ${errorText}`);
+        throw new Error(`Story generation API failed: ${storyResponse.status} ${storyResponse.statusText}`);
       }
 
       const storyData = await storyResponse.json();
@@ -203,18 +223,21 @@ export const [StoryProvider, useStories] = createContextHook(() => {
         let validAvatarUri = '';
         if (childAvatar && typeof childAvatar === 'string' && childAvatar.trim() !== '' && childAvatar !== 'undefined' && childAvatar !== 'null') {
           try {
-            if (childAvatar.startsWith('data:image/')) {
-              validAvatarUri = childAvatar.replace(/^data:image\/[a-z]+;base64,/, '');
-            } else if (childAvatar.startsWith('http')) {
-              validAvatarUri = childAvatar;
+            const trimmedAvatar = childAvatar.trim();
+            if (trimmedAvatar.startsWith('data:image/')) {
+              validAvatarUri = trimmedAvatar.replace(/^data:image\/[a-z]+;base64,/, '');
+            } else if (trimmedAvatar.startsWith('http')) {
+              validAvatarUri = trimmedAvatar;
             } else {
-              validAvatarUri = childAvatar;
+              validAvatarUri = trimmedAvatar;
             }
-            console.log('Valid avatar URI prepared for illustrations');
+            console.log('Valid avatar URI prepared for illustrations, length:', validAvatarUri.length);
           } catch (error) {
             console.error('Error processing avatar URI:', error);
             validAvatarUri = '';
           }
+        } else {
+          console.log('No valid avatar provided for illustrations');
         }
         
         // Create detailed, consistent character descriptions
@@ -358,20 +381,20 @@ export const [StoryProvider, useStories] = createContextHook(() => {
           // Add page to array with strict validation
           const validImageBase64 = (() => {
             if (!imageBase64 || typeof imageBase64 !== 'string') {
-              console.log(`Page ${i + 1}: No image data`);
+              console.log(`Page ${i + 1}: No image data provided`);
               return '';
             }
             const trimmed = imageBase64.trim();
-            if (trimmed === '' || trimmed.length < 50) {
+            if (trimmed === '' || trimmed.length < 10) {
               console.log(`Page ${i + 1}: Image data too short (${trimmed.length} chars)`);
               return '';
             }
-            if (trimmed === 'undefined' || trimmed === 'null') {
-              console.log(`Page ${i + 1}: Image data is literal 'undefined' or 'null'`);
+            if (trimmed === 'undefined' || trimmed === 'null' || trimmed === 'false') {
+              console.log(`Page ${i + 1}: Image data is invalid literal value`);
               return '';
             }
-            if (trimmed.includes('undefined') || trimmed.includes('null')) {
-              console.log(`Page ${i + 1}: Image data contains 'undefined' or 'null'`);
+            if (trimmed.includes('undefined') || trimmed.includes('null') || trimmed.includes('error')) {
+              console.log(`Page ${i + 1}: Image data contains error indicators`);
               return '';
             }
             if (trimmed === 'data:image/png;base64,' || 

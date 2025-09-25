@@ -16,16 +16,40 @@ export default function StoryCard({ story, onPress }: StoryCardProps) {
   };
 
   const firstPageImage = story.pages[0]?.imageBase64 ?? '';
-  const hasValidImage = typeof firstPageImage === 'string' && 
-    firstPageImage.trim() !== '' && 
-    firstPageImage.length > 10 &&
-    !firstPageImage.includes('undefined') &&
-    !firstPageImage.includes('null') &&
-    firstPageImage !== 'undefined' &&
-    firstPageImage !== 'null' &&
-    firstPageImage !== '' &&
-    firstPageImage !== 'data:image/png;base64,' &&
-    firstPageImage !== 'data:image/jpeg;base64,';
+  
+  // More robust image validation
+  const hasValidImage = (() => {
+    if (!firstPageImage || typeof firstPageImage !== 'string') {
+      return false;
+    }
+    
+    const trimmed = firstPageImage.trim();
+    
+    // Check for empty or too short strings
+    if (trimmed === '' || trimmed.length < 10) {
+      return false;
+    }
+    
+    // Check for invalid literal values
+    if (trimmed === 'undefined' || trimmed === 'null' || trimmed === 'false') {
+      return false;
+    }
+    
+    // Check for error indicators in the string
+    if (trimmed.includes('undefined') || trimmed.includes('null') || trimmed.includes('error')) {
+      return false;
+    }
+    
+    // Check for empty data URIs
+    if (trimmed === 'data:image/png;base64,' || 
+        trimmed === 'data:image/jpeg;base64,' || 
+        trimmed === 'data:image/jpg;base64,') {
+      return false;
+    }
+    
+    return true;
+  })();
+  
   const imageUri = hasValidImage
     ? (firstPageImage.startsWith('data:') ? firstPageImage : `data:image/png;base64,${firstPageImage}`)
     : null;
@@ -57,7 +81,11 @@ export default function StoryCard({ story, onPress }: StoryCardProps) {
                 style={styles.image}
                 resizeMode="cover"
                 onError={(error) => {
-                  console.log('Image load error in StoryCard:', error.nativeEvent?.error);
+                  console.log('Image load error in StoryCard:', {
+                    error: error.nativeEvent?.error,
+                    imageUri: imageUri?.substring(0, 100) + '...',
+                    imageLength: imageUri?.length
+                  });
                 }}
               />
             ) : (

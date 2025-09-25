@@ -294,6 +294,16 @@ export default function HomeScreen() {
 
   const handleCreateStory = async () => {
     console.log('=== STORY CREATION STARTED ===');
+    console.log('Current form state:', {
+      childName,
+      childAge,
+      selectedTheme,
+      selectedLanguage,
+      pageCount,
+      storyMode,
+      selectedGender,
+      avatarUri: avatarUri ? 'provided' : 'not provided'
+    });
     
     // Test API connection first (but don't block if it fails)
     try {
@@ -404,13 +414,21 @@ export default function HomeScreen() {
       });
       
       // Race between story generation and timeout
-      console.log('Calling generateStory function...');
+      console.log('Calling generateStory function with final request:', {
+        ...request,
+        includeIllustrations: storyMode === 'illustrated'
+      });
+      console.log('Avatar URI being passed:', finalAvatarUri ? 'provided' : 'not provided');
+      
       const story = await Promise.race([storyGenerationPromise, timeoutPromise]);
-      console.log('Story generation completed, received story:', {
+      
+      console.log('Story generation completed successfully!');
+      console.log('Received story details:', {
         id: story.id,
         title: story.title,
         pageCount: story.pages.length,
-        hasIllustrations: story.includeIllustrations
+        hasIllustrations: story.includeIllustrations,
+        pagesWithImages: story.pages.filter(p => p.imageBase64 && p.imageBase64.length > 10).length
       });
       
       console.log('Story generation completed successfully!');
@@ -456,11 +474,28 @@ export default function HomeScreen() {
       
     } catch (error) {
       console.error('=== STORY CREATION FAILED ===');
+      console.error('Error occurred at:', new Date().toISOString());
       console.error('Error details:', error);
       console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
       console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       console.error('Error name:', error instanceof Error ? error.name : 'Unknown');
-      console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+      console.error('Error type:', typeof error);
+      console.error('Form state when error occurred:', {
+        childName,
+        childAge,
+        selectedTheme,
+        selectedLanguage,
+        pageCount,
+        storyMode,
+        selectedGender,
+        avatarUri: avatarUri ? 'provided' : 'not provided'
+      });
+      
+      // Try to get more error details
+      if (error && typeof error === 'object') {
+        console.error('Error object keys:', Object.keys(error));
+        console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+      }
       
       // Determine user-friendly error message
       let errorMessage = t('failedToGenerate');
@@ -485,20 +520,23 @@ export default function HomeScreen() {
       console.log('Final error message to show user:', errorMessage);
       
       // Make sure we show the error to the user
-      console.log('Setting error state to show modal');
+      console.log('Setting error state to show modal:', errorMessage);
       setShowError(errorMessage);
       
-      // Also show an alert as backup
-      setTimeout(() => {
-        if (errorMessage) {
-          console.log('Showing backup alert with error:', errorMessage);
-        }
-      }, 1000);
+      // Force update the UI state
+      console.log('Current UI state after error:', {
+        showError: !!errorMessage,
+        isGenerating,
+        showCreateModal
+      });
       
       // Don't close the modal on error so user can try again
       console.log('Keeping modal open due to error');
-      console.log('Current showError state:', !!showError);
-      console.log('Current isGenerating state:', isGenerating);
+      console.log('Final error state:', {
+        showError: !!showError,
+        isGenerating,
+        errorMessage
+      });
     }
   };
 
