@@ -489,8 +489,8 @@ export default function HomeScreen() {
                 
                 <View style={styles.avatarSection}>
                   <View style={styles.avatarContainer}>
-                    {avatarUri ? (
-                      <Image source={{ uri: avatarUri }} style={styles.avatar} />
+                    {avatarUri && avatarUri.trim() !== '' ? (
+                      <Image source={{ uri: avatarUri.startsWith('data:') ? avatarUri : `data:image/png;base64,${avatarUri}` }} style={styles.avatar} />
                     ) : (
                       <View style={styles.avatarPlaceholder}>
                         <Text style={styles.avatarPlaceholderText}>

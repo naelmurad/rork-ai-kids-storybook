@@ -15,17 +15,18 @@ export default function StoryCard({ story, onPress }: StoryCardProps) {
     return date.toLocaleDateString();
   };
 
-  const firstPageImage = story.pages[0]?.imageBase64;
-  const hasValidImage = firstPageImage && firstPageImage.trim() !== '' && firstPageImage.length > 10;
+  const firstPageImage = story.pages[0]?.imageBase64 ?? '';
+  const hasValidImage = typeof firstPageImage === 'string' && firstPageImage.trim() !== '' && firstPageImage.length > 10;
+  const imageUri = hasValidImage
+    ? (firstPageImage.startsWith('data:') ? firstPageImage : `data:image/png;base64,${firstPageImage}`)
+    : null;
   
-  // Gender-based colors
   const getGenderColors = (gender?: 'boy' | 'girl') => {
     if (gender === 'boy') {
       return { primary: '#4A90E2', secondary: '#357ABD' };
     } else if (gender === 'girl') {
       return { primary: '#FF69B4', secondary: '#E91E63' };
     }
-    // Default colors for stories without gender info
     return { primary: '#FF6B9D', secondary: '#C44569' };
   };
   
@@ -41,13 +42,13 @@ export default function StoryCard({ story, onPress }: StoryCardProps) {
       >
         <View style={styles.content}>
           <View style={styles.imageContainer}>
-            {hasValidImage ? (
+            {imageUri ? (
               <Image
-                source={{ uri: `data:image/png;base64,${firstPageImage}` }}
+                source={{ uri: imageUri }}
                 style={styles.image}
                 resizeMode="cover"
                 onError={(error) => {
-                  console.log('Image load error in StoryCard:', error.nativeEvent.error);
+                  console.log('Image load error in StoryCard:', error.nativeEvent?.error);
                 }}
               />
             ) : (

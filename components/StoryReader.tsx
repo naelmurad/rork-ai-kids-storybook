@@ -394,17 +394,22 @@ export default function StoryReader({ story, onClose }: StoryReaderProps) {
           ]}
         >
           {story.pages.map((page, index) => {
-            const hasValidImage = page.imageBase64 && 
-              page.imageBase64.trim() !== '' && 
-              page.imageBase64.length > 10 && 
-              !page.imageBase64.includes('undefined') &&
-              !page.imageBase64.includes('null');
+            const raw = page.imageBase64 ?? '';
+            const hasValidImage = typeof raw === 'string' && 
+              raw.trim() !== '' && 
+              raw.length > 10 && 
+              !raw.includes('undefined') &&
+              !raw.includes('null');
+            const imageUri = hasValidImage 
+              ? (raw.startsWith('data:') ? raw : `data:image/png;base64,${raw}`)
+              : null;
             
             console.log(`Page ${index + 1} image validation:`, {
-              hasImageBase64: !!page.imageBase64,
-              imageLength: page.imageBase64?.length || 0,
-              imagePreview: page.imageBase64?.substring(0, 50) || 'empty',
-              hasValidImage
+              hasImageBase64: !!raw,
+              imageLength: raw.length || 0,
+              imagePreview: raw.substring(0, 50) || 'empty',
+              hasValidImage,
+              usesDataPrefix: raw.startsWith('data:')
             });
             
             return (
@@ -414,14 +419,14 @@ export default function StoryReader({ story, onClose }: StoryReaderProps) {
               story.language === 'ar' && styles.rtlPage
             ]}>
               <View style={styles.pageContent}>
-                {hasValidImage ? (
+                {imageUri ? (
                   <View style={styles.fullPageImageContainer}>
                     <Image
-                      source={{ uri: `data:image/png;base64,${page.imageBase64}` }}
+                      source={{ uri: imageUri }}
                       style={styles.fullPageImage}
                       resizeMode="cover"
                       onError={(error) => {
-                        console.error(`Image load error for page ${index + 1}:`, error.nativeEvent.error);
+                        console.error(`Image load error for page ${index + 1}:`, error.nativeEvent?.error);
                       }}
                       onLoad={() => {
                         console.log(`Image loaded successfully for page ${index + 1}`);
