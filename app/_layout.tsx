@@ -9,8 +9,10 @@ import { AppSettingsProvider, useAppSettings } from "@/hooks/app-settings";
 import { SubscriptionProvider } from "@/hooks/subscription-store";
 import { AdProvider } from "@/hooks/ad-store";
 import OnboardingScreen from "@/components/OnboardingScreen";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
-SplashScreen.preventAutoHideAsync();
+console.log("[RootLayout] Initializing app layout");
+SplashScreen.preventAutoHideAsync().catch((e) => console.warn("[RootLayout] preventAutoHide failed", e));
 
 const queryClient = new QueryClient();
 
@@ -21,8 +23,11 @@ function RootLayoutNav() {
   useEffect(() => {
     if (!isLoading) {
       const shouldShow = !settings.hasSeenOnboarding || !settings.hasSelectedLanguage;
+      console.log("[RootLayoutNav] isLoading=false, shouldShowOnboarding=", shouldShow);
       setShowOnboarding(shouldShow);
-      SplashScreen.hideAsync().catch(() => {});
+      SplashScreen.hideAsync().catch((e) => console.warn("[RootLayoutNav] hideAsync failed", e));
+    } else {
+      console.log("[RootLayoutNav] Waiting for settings to load...");
     }
   }, [isLoading, settings.hasSeenOnboarding, settings.hasSelectedLanguage]);
 
@@ -35,10 +40,12 @@ function RootLayoutNav() {
   };
 
   if (isLoading) {
+    console.log("[RootLayoutNav] Loading state, rendering nothing yet");
     return null;
   }
 
   if (showOnboarding) {
+    console.log("[RootLayoutNav] Showing onboarding");
     return <OnboardingScreen onComplete={handleOnboardingComplete} />;
   }
 
@@ -59,9 +66,11 @@ export default function RootLayout() {
         <SubscriptionProvider>
           <AdProvider>
             <StoryProvider>
-              <GestureHandlerRootView style={styles.container} testID="root-gesture-container">
-                <RootLayoutNav />
-              </GestureHandlerRootView>
+              <ErrorBoundary>
+                <GestureHandlerRootView style={styles.container} testID="root-gesture-container">
+                  <RootLayoutNav />
+                </GestureHandlerRootView>
+              </ErrorBoundary>
             </StoryProvider>
           </AdProvider>
         </SubscriptionProvider>
