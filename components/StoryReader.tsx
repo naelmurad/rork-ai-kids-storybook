@@ -398,25 +398,63 @@ export default function StoryReader({ story, onClose }: StoryReaderProps) {
             
             // More robust image validation
             const hasValidImage = (() => {
-              if (!raw || typeof raw !== 'string') return false;
+              if (!raw || typeof raw !== 'string') {
+                console.log(`Page ${index + 1}: No raw image data or not string`);
+                return false;
+              }
               const trimmed = raw.trim();
-              if (trimmed === '' || trimmed.length < 50) return false;
-              if (trimmed === 'undefined' || trimmed === 'null') return false;
-              if (trimmed.includes('undefined') || trimmed.includes('null')) return false;
+              if (trimmed === '' || trimmed.length < 50) {
+                console.log(`Page ${index + 1}: Image data too short (${trimmed.length} chars)`);
+                return false;
+              }
+              if (trimmed === 'undefined' || trimmed === 'null') {
+                console.log(`Page ${index + 1}: Image data is literal 'undefined' or 'null'`);
+                return false;
+              }
+              if (trimmed.includes('undefined') || trimmed.includes('null')) {
+                console.log(`Page ${index + 1}: Image data contains 'undefined' or 'null'`);
+                return false;
+              }
               if (trimmed === 'data:image/png;base64,' || 
                   trimmed === 'data:image/jpeg;base64,' || 
-                  trimmed === 'data:image/jpg;base64,') return false;
+                  trimmed === 'data:image/jpg;base64,') {
+                console.log(`Page ${index + 1}: Image data is empty data URI`);
+                return false;
+              }
+              // Additional validation for base64 content
+              if (trimmed.startsWith('data:image/')) {
+                const base64Part = trimmed.split(',')[1];
+                if (!base64Part || base64Part.length < 20) {
+                  console.log(`Page ${index + 1}: Data URI has no or insufficient base64 content`);
+                  return false;
+                }
+              } else {
+                // If it's just base64 without data URI prefix, check if it's valid
+                if (!/^[A-Za-z0-9+/]+=*$/.test(trimmed)) {
+                  console.log(`Page ${index + 1}: Invalid base64 format`);
+                  return false;
+                }
+              }
+              console.log(`Page ${index + 1}: Valid image data (${trimmed.length} chars)`);
               return true;
             })();
             
             let imageUri: string | null = null;
             if (hasValidImage) {
               try {
-                imageUri = raw.startsWith('data:') ? raw : `data:image/png;base64,${raw}`;
+                if (raw.startsWith('data:image/')) {
+                  imageUri = raw;
+                } else {
+                  imageUri = `data:image/png;base64,${raw}`;
+                }
+                
                 // Final validation - ensure the URI has actual data
                 const base64Part = imageUri.split(',')[1];
                 if (!base64Part || base64Part.length < 20) {
+                  console.log(`Page ${index + 1}: Final validation failed - insufficient base64 data`);
                   imageUri = null;
+                } else {
+                  console.log(`Page ${index + 1}: Final image URI created successfully`);
                 }
               } catch (error) {
                 console.error(`Error creating image URI for page ${index + 1}:`, error);
@@ -438,17 +476,23 @@ export default function StoryReader({ story, onClose }: StoryReaderProps) {
               story.language === 'ar' && styles.rtlPage
             ]}>
               <View style={styles.pageContent}>
-                {imageUri ? (
+                {imageUri && imageUri.trim() !== '' ? (
                   <View style={styles.fullPageImageContainer}>
                     <Image
                       source={{ uri: imageUri }}
                       style={styles.fullPageImage}
                       resizeMode="cover"
                       onError={(error) => {
-                        console.error(`Image load error for page ${index + 1}:`, error.nativeEvent?.error);
+                        console.error(`Image load error for page ${index + 1}:`, {
+                          error: error.nativeEvent?.error,
+                          uri: imageUri?.substring(0, 100) + '...'
+                        });
                       }}
                       onLoad={() => {
                         console.log(`Image loaded successfully for page ${index + 1}`);
+                      }}
+                      onLoadStart={() => {
+                        console.log(`Image load started for page ${index + 1}`);
                       }}
                     />
                     <View style={styles.textOverlay}>

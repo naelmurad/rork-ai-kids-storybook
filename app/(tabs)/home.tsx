@@ -252,7 +252,10 @@ export default function HomeScreen() {
   const testAPIConnection = async () => {
     try {
       console.log('Testing API connection...');
-      const response = await fetch('https://toolkit.rork.com/text/llm/', {
+      
+      // Add timeout for API test
+      const testTimeout = 10000; // 10 seconds
+      const testApiCall = fetch('https://toolkit.rork.com/text/llm/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -264,6 +267,14 @@ export default function HomeScreen() {
           ]
         })
       });
+      
+      const testTimeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('API test timed out'));
+        }, testTimeout);
+      });
+      
+      const response = await Promise.race([testApiCall, testTimeoutPromise]);
       
       console.log('API Response status:', response.status);
       console.log('API Response headers:', Object.fromEntries(response.headers.entries()));
@@ -366,8 +377,19 @@ export default function HomeScreen() {
       });
       console.log('Final avatar URI:', finalAvatarUri ? 'provided' : 'not provided');
       
+      // Validate final request before sending
+      if (!request.childName || !request.childName.trim()) {
+        throw new Error('Child name is required');
+      }
+      if (!request.childAge || request.childAge < 1 || request.childAge > 12) {
+        throw new Error('Valid child age is required (1-12)');
+      }
+      if (!request.theme || !request.theme.trim()) {
+        throw new Error('Story theme is required');
+      }
+      
       // Add timeout protection for the entire story generation process
-      const storyGenerationTimeout = 120000; // 2 minutes timeout
+      const storyGenerationTimeout = 180000; // 3 minutes timeout for better reliability
       const storyGenerationPromise = generateStory({
         ...request,
         includeIllustrations: storyMode === 'illustrated'
@@ -380,7 +402,14 @@ export default function HomeScreen() {
       });
       
       // Race between story generation and timeout
+      console.log('Calling generateStory function...');
       const story = await Promise.race([storyGenerationPromise, timeoutPromise]);
+      console.log('Story generation completed, received story:', {
+        id: story.id,
+        title: story.title,
+        pageCount: story.pages.length,
+        hasIllustrations: story.includeIllustrations
+      });
       
       console.log('Story generation completed successfully!');
       

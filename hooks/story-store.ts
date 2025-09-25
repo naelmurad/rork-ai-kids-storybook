@@ -82,8 +82,11 @@ export const [StoryProvider, useStories] = createContextHook(() => {
       console.log('=== STORY STORE: Generating story text ===');
       setGenerationProgress(20);
       
-      console.log('Making API request to:', 'https://toolkit.rork.com/text/llm/');
-      const storyResponse = await fetch('https://toolkit.rork.com/text/llm/', {
+      console.log('Making API request to generate story text...');
+      
+      // Add timeout for the story generation API call
+      const storyGenerationTimeout = 30000; // 30 seconds
+      const storyApiCall = fetch('https://toolkit.rork.com/text/llm/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -106,6 +109,14 @@ export const [StoryProvider, useStories] = createContextHook(() => {
           ]
         })
       });
+      
+      const storyTimeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Story text generation timed out'));
+        }, storyGenerationTimeout);
+      });
+      
+      const storyResponse = await Promise.race([storyApiCall, storyTimeoutPromise]);
 
       if (!storyResponse.ok) {
         const errorText = await storyResponse.text();
@@ -301,7 +312,7 @@ export const [StoryProvider, useStories] = createContextHook(() => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       prompt: `Children's book illustration page ${i + 1} of ${expectedPages}. ${baseCharacterPrompt} SCENE: "${page.text}". Style: ${characterInfo.style}, colorful, friendly, safe for children. Theme: ${request.theme}. IMPORTANT: Show the SAME character ${request.childName} as described above. NO OTHER CHILDREN in the scene. NO TEXT OR WRITING in the image. Focus on the scene while keeping the character identical to previous pages.`,
-                      size: '512x512'
+                      size: '1024x1024'
                     })
                   }),
                   25000
@@ -330,16 +341,32 @@ export const [StoryProvider, useStories] = createContextHook(() => {
             console.error(`Critical error generating image for page ${i + 1}:`, error);
           }
           
-          // Add page to array with better validation
+          // Add page to array with strict validation
           const validImageBase64 = (() => {
-            if (!imageBase64 || typeof imageBase64 !== 'string') return '';
+            if (!imageBase64 || typeof imageBase64 !== 'string') {
+              console.log(`Page ${i + 1}: No image data`);
+              return '';
+            }
             const trimmed = imageBase64.trim();
-            if (trimmed === '' || trimmed.length < 50) return '';
-            if (trimmed === 'undefined' || trimmed === 'null') return '';
-            if (trimmed.includes('undefined') || trimmed.includes('null')) return '';
+            if (trimmed === '' || trimmed.length < 50) {
+              console.log(`Page ${i + 1}: Image data too short (${trimmed.length} chars)`);
+              return '';
+            }
+            if (trimmed === 'undefined' || trimmed === 'null') {
+              console.log(`Page ${i + 1}: Image data is literal 'undefined' or 'null'`);
+              return '';
+            }
+            if (trimmed.includes('undefined') || trimmed.includes('null')) {
+              console.log(`Page ${i + 1}: Image data contains 'undefined' or 'null'`);
+              return '';
+            }
             if (trimmed === 'data:image/png;base64,' || 
                 trimmed === 'data:image/jpeg;base64,' || 
-                trimmed === 'data:image/jpg;base64,') return '';
+                trimmed === 'data:image/jpg;base64,') {
+              console.log(`Page ${i + 1}: Image data is empty data URI`);
+              return '';
+            }
+            console.log(`Page ${i + 1}: Valid image data (${trimmed.length} chars)`);
             return trimmed;
           })();
             
