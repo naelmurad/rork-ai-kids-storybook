@@ -2,13 +2,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StoryProvider } from "@/hooks/story-store";
 import { AppSettingsProvider, useAppSettings } from "@/hooks/app-settings";
 import { SubscriptionProvider } from "@/hooks/subscription-store";
 import { AdProvider } from "@/hooks/ad-store";
 import OnboardingScreen from "@/components/OnboardingScreen";
+import DebugConsole from "@/components/DebugConsole";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -24,9 +25,10 @@ function RootLayoutNav() {
       setShowOnboarding(shouldShow);
       
       // Only hide splash screen after we've determined what to show
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         SplashScreen.hideAsync().catch(() => {});
       }, shouldShow ? 100 : 50);
+      return () => clearTimeout(timeoutId);
     }
   }, [isLoading, settings.hasSeenOnboarding, settings.hasSelectedLanguage]);
 
@@ -65,6 +67,9 @@ export default function RootLayout() {
             <StoryProvider>
               <GestureHandlerRootView style={styles.container} testID="root-gesture-container">
                 <RootLayoutNav />
+                <View pointerEvents="box-none" style={styles.debugOverlay}>
+                  <DebugConsole />
+                </View>
               </GestureHandlerRootView>
             </StoryProvider>
           </AdProvider>
@@ -77,5 +82,12 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  debugOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
   },
 });
