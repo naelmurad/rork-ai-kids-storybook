@@ -121,15 +121,30 @@ export const [StoryProvider, useStories] = createContextHook(() => {
 }
 Make exactly ${expectedPages} pages. Use ${request.childName} as the main character throughout.`;
       
-      // Use the correct Rork Toolkit SDK for text generation
-      const storyResponse = await generateText({
-        messages: [
-          {
-            role: 'user',
-            content: storyPrompt
-          }
-        ]
+      // Use direct API call instead of SDK for better error handling
+      console.log('Making direct API call to text generation endpoint...');
+      const textResponse = await fetch('https://toolkit.rork.com/text/llm/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: 'user',
+              content: storyPrompt
+            }
+          ]
+        })
       });
+      
+      if (!textResponse.ok) {
+        const errorText = await textResponse.text();
+        console.error('Text generation API error:', textResponse.status, errorText);
+        throw new Error(`Text generation failed: ${textResponse.status} - ${errorText}`);
+      }
+      
+      const storyResponse = await textResponse.text();
       
       console.log('Raw API response received');
       

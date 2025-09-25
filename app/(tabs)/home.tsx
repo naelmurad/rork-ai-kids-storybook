@@ -27,6 +27,7 @@ import PremiumUpgradeScreen from '@/components/PremiumUpgradeScreen';
 import StoryBanner from '@/components/StoryBanner';
 import BannerAd from '@/components/BannerAd';
 import { useAds } from '@/hooks/ad-store';
+import DebugConsole from '@/components/DebugConsole';
 
 export default function HomeScreen() {
   const { stories, isLoading, isGenerating, generationProgress, generateStory } = useStories();
@@ -1115,6 +1116,8 @@ export default function HomeScreen() {
         visible={showPremiumUpgrade}
         onClose={() => setShowPremiumUpgrade(false)}
       />
+      
+      <DebugConsole />
     </View>
   );
 }
