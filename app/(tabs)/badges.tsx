@@ -19,12 +19,12 @@ const BADGE_DEFS: BadgeDef[] = [
   // Story Creation Milestones
   { id: 'first_story', titleKey: 'First Story', descriptionKey: 'Complete your first story', requiredStories: 1, icon: '🌟' },
   { id: 'story_explorer', titleKey: 'Story Explorer', descriptionKey: 'Create 5 stories', requiredStories: 5, icon: '🗺️' },
-  { id: 'story_master', titleKey: 'Story Master', descriptionKey: 'Create 15 stories', requiredStories: 15, icon: '👑' },
-  { id: 'story_legend', titleKey: 'Story Legend', descriptionKey: 'Create 30 stories', requiredStories: 30, icon: '🏆' },
+  { id: 'story_master', titleKey: 'Story Master', descriptionKey: 'Create 10 stories', requiredStories: 10, icon: '👑' },
+  { id: 'story_legend', titleKey: 'Story Legend', descriptionKey: 'Create 20 stories', requiredStories: 20, icon: '🏆' },
   
   // Reading Engagement
-  { id: 'reading_streak', titleKey: 'Reading Streak', descriptionKey: 'Read stories 7 days in a row', requiredStories: 7, icon: '🔥' },
-  { id: 'dedicated_reader', titleKey: 'Dedicated Reader', descriptionKey: 'Read stories 30 days in a row', requiredStories: 30, icon: '📚' },
+  { id: 'reading_streak', titleKey: 'Reading Streak', descriptionKey: 'Read stories 3 days in a row', requiredStories: 3, icon: '🔥' },
+  { id: 'dedicated_reader', titleKey: 'Dedicated Reader', descriptionKey: 'Read stories 7 days in a row', requiredStories: 7, icon: '📚' },
   
   // Creative Themes
   { id: 'adventure_lover', titleKey: 'Adventure Lover', descriptionKey: 'Create 3 adventure stories', requiredStories: 3, icon: '🏔️' },
@@ -32,16 +32,16 @@ const BADGE_DEFS: BadgeDef[] = [
   { id: 'space_explorer', titleKey: 'Space Explorer', descriptionKey: 'Create 3 space stories', requiredStories: 3, icon: '🚀' },
   
   // Special Achievements
-  { id: 'illustration_artist', titleKey: 'Illustration Artist', descriptionKey: 'Create 5 stories with illustrations', requiredStories: 5, icon: '🎨' },
-  { id: 'polyglot', titleKey: 'Polyglot', descriptionKey: 'Create stories in 3 different languages', requiredStories: 3, icon: '🌍' },
-  { id: 'epic_storyteller', titleKey: 'Epic Storyteller', descriptionKey: 'Create a story with 10+ pages', requiredStories: 1, icon: '📖' },
+  { id: 'illustration_artist', titleKey: 'Illustration Artist', descriptionKey: 'Create 3 stories with illustrations', requiredStories: 3, icon: '🎨' },
+  { id: 'creative_writer', titleKey: 'Creative Writer', descriptionKey: 'Create stories with 5 different themes', requiredStories: 5, icon: '✍️' },
+  { id: 'family_storyteller', titleKey: 'Family Storyteller', descriptionKey: 'Create stories for 2 different children', requiredStories: 2, icon: '👨‍👩‍👧‍👦' },
   
-  // Time-based
-  { id: 'early_bird', titleKey: 'Early Bird', descriptionKey: 'Create a story before 8 AM', requiredStories: 1, icon: '🌅' },
-  { id: 'night_owl', titleKey: 'Night Owl', descriptionKey: 'Create a story after 10 PM', requiredStories: 1, icon: '🦉' },
+  // Weekly Goals
+  { id: 'weekly_creator', titleKey: 'Weekly Creator', descriptionKey: 'Create 3 stories in one week', requiredStories: 3, icon: '📅' },
+  { id: 'consistent_creator', titleKey: 'Consistent Creator', descriptionKey: 'Create stories for 5 consecutive days', requiredStories: 5, icon: '⭐' },
   
   // Ultimate Achievement
-  { id: 'master_storyteller', titleKey: 'Master Storyteller', descriptionKey: 'Unlock 10 other badges', requiredStories: 10, icon: '🧙‍♂️' },
+  { id: 'master_storyteller', titleKey: 'Master Storyteller', descriptionKey: 'Unlock 8 other badges', requiredStories: 8, icon: '🧙‍♂️' },
 ];
 
 type LocalizedBadgeTexts = Record<string, { title: string; description: string }>;
@@ -50,24 +50,24 @@ const BADGE_I18N: Record<string, LocalizedBadgeTexts> = {
   ar: {
     first_story: { title: 'أول قصة', description: 'أكمل أول قصة لك' },
     story_explorer: { title: 'مستكشف القصص', description: 'أنشئ 5 قصص' },
-    story_master: { title: 'سيد القصص', description: 'أنشئ 15 قصة' },
-    story_legend: { title: 'أسطورة القصص', description: 'أنشئ 30 قصة' },
+    story_master: { title: 'سيد القصص', description: 'أنشئ 10 قصص' },
+    story_legend: { title: 'أسطورة القصص', description: 'أنشئ 20 قصة' },
     
-    reading_streak: { title: 'سلسلة القراءة', description: 'اقرأ القصص 7 أيام متتالية' },
-    dedicated_reader: { title: 'قارئ مخلص', description: 'اقرأ القصص 30 يومًا متتاليًا' },
+    reading_streak: { title: 'سلسلة القراءة', description: 'اقرأ القصص 3 أيام متتالية' },
+    dedicated_reader: { title: 'قارئ مخلص', description: 'اقرأ القصص 7 أيام متتالية' },
     
     adventure_lover: { title: 'محب المغامرة', description: 'أنشئ 3 قصص مغامرة' },
     fantasy_dreamer: { title: 'حالم الفانتازيا', description: 'أنشئ 3 قصص فانتازيا' },
     space_explorer: { title: 'مستكشف الفضاء', description: 'أنشئ 3 قصص فضائية' },
     
-    illustration_artist: { title: 'فنان الرسوم', description: 'أنشئ 5 قصص مع الرسوم التوضيحية' },
-    polyglot: { title: 'متعدد اللغات', description: 'أنشئ قصصًا بـ 3 لغات مختلفة' },
-    epic_storyteller: { title: 'راوي ملحمي', description: 'أنشئ قصة من 10 صفحات أو أكثر' },
+    illustration_artist: { title: 'فنان الرسوم', description: 'أنشئ 3 قصص مع الرسوم التوضيحية' },
+    creative_writer: { title: 'كاتب مبدع', description: 'أنشئ قصصًا بـ 5 مواضيع مختلفة' },
+    family_storyteller: { title: 'راوي العائلة', description: 'أنشئ قصصًا لطفلين مختلفين' },
     
-    early_bird: { title: 'المستيقظ مبكرًا', description: 'أنشئ قصة قبل الساعة 8 صباحًا' },
-    night_owl: { title: 'بومة الليل', description: 'أنشئ قصة بعد الساعة 10 مساءً' },
+    weekly_creator: { title: 'منشئ أسبوعي', description: 'أنشئ 3 قصص في أسبوع واحد' },
+    consistent_creator: { title: 'منشئ ثابت', description: 'أنشئ قصصًا لـ 5 أيام متتالية' },
     
-    master_storyteller: { title: 'سيد الحكايات', description: 'افتح 10 شارات أخرى' },
+    master_storyteller: { title: 'سيد الحكايات', description: 'افتح 8 شارات أخرى' },
   },
 };
 

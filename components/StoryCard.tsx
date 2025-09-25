@@ -19,7 +19,7 @@ export default function StoryCard({ story, onPress }: StoryCardProps) {
   const hasValidImage = typeof firstPageImage === 'string' && firstPageImage.trim() !== '' && firstPageImage.length > 10;
   const imageUri = hasValidImage
     ? (firstPageImage.startsWith('data:') ? firstPageImage : `data:image/png;base64,${firstPageImage}`)
-    : null;
+    : undefined;
   
   const getGenderColors = (gender?: 'boy' | 'girl') => {
     if (gender === 'boy') {
@@ -42,7 +42,7 @@ export default function StoryCard({ story, onPress }: StoryCardProps) {
       >
         <View style={styles.content}>
           <View style={styles.imageContainer}>
-            {imageUri ? (
+            {imageUri && imageUri.length > 0 ? (
               <Image
                 source={{ uri: imageUri }}
                 style={styles.image}

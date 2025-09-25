@@ -22,7 +22,11 @@ function RootLayoutNav() {
     if (!isLoading) {
       const shouldShow = !settings.hasSeenOnboarding || !settings.hasSelectedLanguage;
       setShowOnboarding(shouldShow);
-      SplashScreen.hideAsync().catch(() => {});
+      
+      // Only hide splash screen after we've determined what to show
+      setTimeout(() => {
+        SplashScreen.hideAsync().catch(() => {});
+      }, shouldShow ? 100 : 50);
     }
   }, [isLoading, settings.hasSeenOnboarding, settings.hasSelectedLanguage]);
 
