@@ -248,8 +248,51 @@ export default function HomeScreen() {
     return !hasErrors;
   };
 
+  // Test function to check API connectivity
+  const testAPIConnection = async () => {
+    try {
+      console.log('Testing API connection...');
+      const response = await fetch('https://toolkit.rork.com/text/llm/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: 'user',
+              content: 'Say "API is working" in JSON format: {"message": "API is working"}'
+            }
+          ]
+        })
+      });
+      
+      console.log('API Response status:', response.status);
+      console.log('API Response headers:', Object.fromEntries(response.headers.entries()));
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('API Response data:', data);
+        return true;
+      } else {
+        const errorText = await response.text();
+        console.error('API Error:', errorText);
+        return false;
+      }
+    } catch (error) {
+      console.error('API Connection test failed:', error);
+      return false;
+    }
+  };
+
   const handleCreateStory = async () => {
     console.log('=== STORY CREATION STARTED ===');
+    
+    // Test API connection first
+    const apiWorking = await testAPIConnection();
+    if (!apiWorking) {
+      setShowError('API connection failed. Please check your internet connection and try again.');
+      return;
+    }
+    console.log('API connection test passed');
     
     try {
       // Check usage limits
@@ -317,6 +360,11 @@ export default function HomeScreen() {
       }
       
       console.log('Starting story generation...');
+      console.log('Final request object:', {
+        ...request,
+        includeIllustrations: storyMode === 'illustrated'
+      });
+      console.log('Final avatar URI:', finalAvatarUri ? 'provided' : 'not provided');
       
       // Add timeout protection for the entire story generation process
       const storyGenerationTimeout = 120000; // 2 minutes timeout
@@ -380,26 +428,46 @@ export default function HomeScreen() {
       console.error('Error details:', error);
       console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
       console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      console.error('Error name:', error instanceof Error ? error.name : 'Unknown');
+      console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
       
       // Determine user-friendly error message
       let errorMessage = t('failedToGenerate');
       if (error instanceof Error) {
+        console.log('Processing error message:', error.message);
         if (error.message.includes('timeout')) {
           errorMessage = 'Story generation timed out. Please try again with fewer pages or text-only mode.';
-        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+        } else if (error.message.includes('network') || error.message.includes('fetch') || error.message.includes('Failed to fetch')) {
           errorMessage = 'Network error. Please check your connection and try again.';
-        } else if (error.message.includes('API')) {
+        } else if (error.message.includes('API') || error.message.includes('500') || error.message.includes('502') || error.message.includes('503')) {
           errorMessage = 'Service temporarily unavailable. Please try again in a moment.';
+        } else if (error.message.includes('Failed to generate story')) {
+          errorMessage = 'Story generation service error. Please try again.';
         } else {
-          errorMessage = error.message;
+          // Show the actual error message for debugging
+          errorMessage = `Error: ${error.message}`;
         }
+      } else {
+        errorMessage = 'An unexpected error occurred. Please try again.';
       }
       
+      console.log('Final error message to show user:', errorMessage);
+      
       // Make sure we show the error to the user
+      console.log('Setting error state to show modal');
       setShowError(errorMessage);
+      
+      // Also show an alert as backup
+      setTimeout(() => {
+        if (errorMessage) {
+          console.log('Showing backup alert with error:', errorMessage);
+        }
+      }, 1000);
       
       // Don't close the modal on error so user can try again
       console.log('Keeping modal open due to error');
+      console.log('Current showError state:', !!showError);
+      console.log('Current isGenerating state:', isGenerating);
     }
   };
 

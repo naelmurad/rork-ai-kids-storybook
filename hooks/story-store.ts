@@ -70,8 +70,9 @@ export const [StoryProvider, useStories] = createContextHook(() => {
 
   const generateStory = useCallback(async (request: StoryGenerationRequest, childAvatar?: string): Promise<Story> => {
     console.log('=== STORY STORE: Starting story generation ===');
-    console.log('Request:', request);
+    console.log('Request:', JSON.stringify(request, null, 2));
     console.log('Avatar provided:', !!childAvatar, typeof childAvatar);
+    console.log('Avatar length:', childAvatar?.length || 0);
     
     setIsGenerating(true);
     setGenerationProgress(0);
@@ -81,6 +82,7 @@ export const [StoryProvider, useStories] = createContextHook(() => {
       console.log('=== STORY STORE: Generating story text ===');
       setGenerationProgress(20);
       
+      console.log('Making API request to:', 'https://toolkit.rork.com/text/llm/');
       const storyResponse = await fetch('https://toolkit.rork.com/text/llm/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -106,21 +108,38 @@ export const [StoryProvider, useStories] = createContextHook(() => {
       });
 
       if (!storyResponse.ok) {
-        console.error('Story generation failed:', storyResponse.status, storyResponse.statusText);
-        throw new Error(`Failed to generate story: ${storyResponse.status}`);
+        const errorText = await storyResponse.text();
+        console.error('Story generation failed:', {
+          status: storyResponse.status,
+          statusText: storyResponse.statusText,
+          errorBody: errorText
+        });
+        throw new Error(`Failed to generate story: ${storyResponse.status} - ${errorText}`);
       }
 
       const storyData = await storyResponse.json();
-      console.log('Story generation response received');
+      console.log('Story generation response received:', {
+        hasCompletion: !!storyData.completion,
+        completionLength: storyData.completion?.length || 0,
+        completionPreview: storyData.completion?.substring(0, 200) + '...'
+      });
       let parsedStory;
       
       try {
         // Clean the response to ensure it's valid JSON
         let cleanedResponse = storyData.completion.trim();
+        console.log('Raw completion:', cleanedResponse.substring(0, 500));
+        
         if (cleanedResponse.startsWith('```json')) {
           cleanedResponse = cleanedResponse.replace(/```json\s*/, '').replace(/```\s*$/, '');
         }
+        
+        console.log('Cleaned response for parsing:', cleanedResponse.substring(0, 500));
         parsedStory = JSON.parse(cleanedResponse);
+        console.log('Successfully parsed story:', {
+          title: parsedStory.title,
+          pageCount: parsedStory.pages?.length || 0
+        });
         
         // Ensure we have the correct number of pages
         const expectedPages = request.pageCount || 5;
@@ -129,6 +148,7 @@ export const [StoryProvider, useStories] = createContextHook(() => {
         }
       } catch (error) {
         console.error('JSON parsing error:', error);
+        console.error('Failed to parse completion:', storyData.completion);
         // Fallback if JSON parsing fails - create requested number of pages
         const expectedPages = request.pageCount || 5;
         const fallbackText = storyData.completion || `Once upon a time, ${request.childName} went on a wonderful ${request.theme} adventure.`;
@@ -341,6 +361,16 @@ export const [StoryProvider, useStories] = createContextHook(() => {
         console.log('Pages with images:', pagesWithImages);
         console.log('Pages without images:', pagesWithoutImages);
         
+        // Log detailed page information
+        pages.forEach((page, index) => {
+          console.log(`Page ${index + 1}:`, {
+            hasText: !!page.text,
+            textLength: page.text?.length || 0,
+            hasImage: !!page.imageBase64,
+            imageLength: page.imageBase64?.length || 0
+          });
+        });
+        
         // If no images were generated at all, log a warning but continue
         if (pagesWithImages === 0 && request.includeIllustrations) {
           console.warn('No illustrations were generated - story will be text-only');
@@ -384,11 +414,17 @@ export const [StoryProvider, useStories] = createContextHook(() => {
 
       return story;
     } catch (error) {
-      console.error('Story generation failed:', error);
+      console.error('=== STORY GENERATION FAILED ===');
+      console.error('Error type:', error?.constructor?.name);
+      console.error('Error message:', error instanceof Error ? error.message : String(error));
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      console.error('Request that failed:', JSON.stringify(request, null, 2));
+      
       setIsGenerating(false);
       setGenerationProgress(0);
       throw error;
     } finally {
+      console.log('=== STORY GENERATION CLEANUP ===');
       setIsGenerating(false);
       setGenerationProgress(0);
     }
