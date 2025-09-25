@@ -399,7 +399,10 @@ export default function StoryReader({ story, onClose }: StoryReaderProps) {
               raw.trim() !== '' && 
               raw.length > 10 && 
               !raw.includes('undefined') &&
-              !raw.includes('null');
+              !raw.includes('null') &&
+              raw !== 'undefined' &&
+              raw !== 'null' &&
+              raw !== '';
             const imageUri = hasValidImage 
               ? (raw.startsWith('data:') ? raw : `data:image/png;base64,${raw}`)
               : null;

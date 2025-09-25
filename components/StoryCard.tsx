@@ -16,10 +16,16 @@ export default function StoryCard({ story, onPress }: StoryCardProps) {
   };
 
   const firstPageImage = story.pages[0]?.imageBase64 ?? '';
-  const hasValidImage = typeof firstPageImage === 'string' && firstPageImage.trim() !== '' && firstPageImage.length > 10;
+  const hasValidImage = typeof firstPageImage === 'string' && 
+    firstPageImage.trim() !== '' && 
+    firstPageImage.length > 10 &&
+    !firstPageImage.includes('undefined') &&
+    !firstPageImage.includes('null') &&
+    firstPageImage !== 'undefined' &&
+    firstPageImage !== 'null';
   const imageUri = hasValidImage
     ? (firstPageImage.startsWith('data:') ? firstPageImage : `data:image/png;base64,${firstPageImage}`)
-    : undefined;
+    : null;
   
   const getGenderColors = (gender?: 'boy' | 'girl') => {
     if (gender === 'boy') {
@@ -42,7 +48,7 @@ export default function StoryCard({ story, onPress }: StoryCardProps) {
       >
         <View style={styles.content}>
           <View style={styles.imageContainer}>
-            {imageUri && imageUri.length > 0 ? (
+            {imageUri ? (
               <Image
                 source={{ uri: imageUri }}
                 style={styles.image}
