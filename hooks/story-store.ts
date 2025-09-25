@@ -74,17 +74,27 @@ export const [StoryProvider, useStories] = createContextHook(() => {
     console.log('Avatar provided:', !!childAvatar, typeof childAvatar);
     console.log('Avatar length:', childAvatar?.length || 0);
     
+    // Validate request first
+    if (!request.childName || !request.childName.trim()) {
+      throw new Error('Child name is required');
+    }
+    if (!request.childAge || request.childAge < 1 || request.childAge > 12) {
+      throw new Error('Valid child age is required (1-12)');
+    }
+    if (!request.theme || !request.theme.trim()) {
+      throw new Error('Story theme is required');
+    }
+    
     setIsGenerating(true);
     setGenerationProgress(0);
 
     try {
-      // Generate story text
+      // Generate story text with simplified approach
       console.log('=== STORY STORE: Generating story text ===');
       setGenerationProgress(20);
       
-      console.log('Making API request to generate story text...');
-      
-
+      const expectedPages = request.pageCount || 5;
+      const languageName = getLanguageName(request.language);
       
       console.log('Making story generation API request...');
       console.log('Request details:', {
@@ -92,97 +102,150 @@ export const [StoryProvider, useStories] = createContextHook(() => {
         childAge: request.childAge,
         theme: request.theme,
         language: request.language,
-        pageCount: request.pageCount || 5,
+        pageCount: expectedPages,
         gender: request.gender
       });
       
-      // Use direct API call for text generation with better error handling
-      console.log('Making direct API call for story generation...');
+      // Simplified story prompt for better reliability
+      const storyPrompt = `Create a ${expectedPages}-page children's story about ${request.childName}, a ${request.childAge}-year-old ${request.gender}. Theme: ${request.theme}. Write in ${languageName}. Return ONLY valid JSON in this exact format:
+{
+  "title": "Story title in ${languageName}",
+  "pages": [
+    {"text": "Page 1 story text in ${languageName}"},
+    {"text": "Page 2 story text in ${languageName}"},
+    {"text": "Page 3 story text in ${languageName}"},
+    {"text": "Page 4 story text in ${languageName}"},
+    {"text": "Page 5 story text in ${languageName}"}
+  ]
+}
+Make exactly ${expectedPages} pages. Use ${request.childName} as the main character throughout.`;
       
-      const storyPrompt = `Create a ${request.theme} story for ${request.childName}, age ${request.childAge}. The child's name is "${request.childName}" and they are ${request.childAge} years old. IMPORTANT: Write the ENTIRE story (including the child's name and all text) in ${getLanguageName(request.language)} language. The main character should be the SAME PERSON throughout the entire story - ${request.childName} is a ${request.childAge}-year-old ${request.gender}. Keep the character consistent in appearance, personality, and actions across all pages. CRITICAL: Use ONLY the name "${request.childName}" throughout the story - this name should appear in ${getLanguageName(request.language)} language in the story text. Format the response as JSON with this exact structure:
-      {
-        "title": "Story Title in ${getLanguageName(request.language)}",
-        "pages": [
-          ${Array.from({length: request.pageCount || 5}, (_, i) => `{"text": "Page ${i + 1} text here in ${getLanguageName(request.language)}"}`).join(',\n          ')}
-        ]
+      // Add timeout to API call
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
+      let textResponse;
+      try {
+        textResponse = await fetch('https://toolkit.rork.com/text/llm/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            messages: [
+              {
+                role: 'user',
+                content: storyPrompt
+              }
+            ]
+          }),
+          signal: controller.signal
+        });
+      } finally {
+        clearTimeout(timeoutId);
       }
-      Make sure there are exactly ${request.pageCount || 5} pages. Use the child's name ${request.childName} throughout the story in ${getLanguageName(request.language)} language. Remember: ${request.childName} is the ONLY main character and should remain consistent.`;
-      
-      const textResponse = await fetch('https://toolkit.rork.com/text/llm/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: [
-            {
-              role: 'user',
-              content: storyPrompt
-            }
-          ]
-        })
-      });
       
       if (!textResponse.ok) {
         const errorText = await textResponse.text();
         console.error('Text generation API error:', textResponse.status, errorText);
-        throw new Error(`Text generation failed: ${textResponse.status} - ${errorText}`);
+        throw new Error(`Story generation failed: ${textResponse.status}`);
       }
       
       const textData = await textResponse.json();
-      console.log('Raw API response:', textData);
+      console.log('Raw API response received');
       const storyResponse = textData.text || textData.content || textData.message || textData.response || '';
       
+      if (!storyResponse || storyResponse.length < 10) {
+        throw new Error('Empty response from story generation API');
+      }
+      
       console.log('Story generation response received:', {
-        responseLength: storyResponse?.length || 0,
-        responsePreview: storyResponse?.substring(0, 200) || 'No response'
+        responseLength: storyResponse.length,
+        responsePreview: storyResponse.substring(0, 200)
       });
+      
       let parsedStory;
       
       try {
-        // The generateText function returns the text directly
+        // Clean and parse the response
         let cleanedResponse = storyResponse.trim();
-        console.log('Raw content:', cleanedResponse.substring(0, 500));
         
+        // Remove markdown code blocks if present
         if (cleanedResponse.startsWith('```json')) {
           cleanedResponse = cleanedResponse.replace(/```json\s*/, '').replace(/```\s*$/, '');
+        } else if (cleanedResponse.startsWith('```')) {
+          cleanedResponse = cleanedResponse.replace(/```\s*/, '').replace(/```\s*$/, '');
         }
         
-        console.log('Cleaned response for parsing:', cleanedResponse.substring(0, 500));
+        // Try to find JSON in the response
+        const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          cleanedResponse = jsonMatch[0];
+        }
+        
+        console.log('Attempting to parse JSON response...');
         parsedStory = JSON.parse(cleanedResponse);
+        
+        // Validate the parsed story
+        if (!parsedStory.title || !parsedStory.pages || !Array.isArray(parsedStory.pages)) {
+          throw new Error('Invalid story structure');
+        }
+        
+        // Ensure we have the right number of pages
+        if (parsedStory.pages.length !== expectedPages) {
+          console.warn(`Expected ${expectedPages} pages, got ${parsedStory.pages.length}. Adjusting...`);
+          
+          // Adjust pages to match expected count
+          if (parsedStory.pages.length > expectedPages) {
+            parsedStory.pages = parsedStory.pages.slice(0, expectedPages);
+          } else {
+            // Add missing pages
+            while (parsedStory.pages.length < expectedPages) {
+              const pageNum = parsedStory.pages.length + 1;
+              parsedStory.pages.push({
+                text: `${request.childName} continued the ${request.theme} adventure on page ${pageNum}.`
+              });
+            }
+          }
+        }
+        
         console.log('Successfully parsed story:', {
           title: parsedStory.title,
-          pageCount: parsedStory.pages?.length || 0
+          pageCount: parsedStory.pages.length
         });
         
-        // Ensure we have the correct number of pages
-        const expectedPages = request.pageCount || 5;
-        if (!parsedStory.pages || parsedStory.pages.length !== expectedPages) {
-          throw new Error('Invalid page count');
-        }
-      } catch (error) {
-        console.error('JSON parsing error:', error);
-        console.error('Failed to parse content:', storyResponse?.substring(0, 1000) || 'No content found');
-        // Fallback if JSON parsing fails - create requested number of pages
-        const expectedPages = request.pageCount || 5;
-        const fallbackText = `Once upon a time, ${request.childName} went on a wonderful ${request.theme} adventure.`;
-        const sentences = fallbackText.split(/[.!?]+/).filter((s: string) => s.trim().length > 0);
-        const pages = [];
-        for (let i = 0; i < expectedPages; i++) {
-          const pageText = sentences.slice(i * 2, (i + 1) * 2).join('. ') + '.';
-          pages.push({ text: pageText || `${request.childName} continued the ${request.theme} adventure.` });
-        }
+      } catch (parseError) {
+        console.error('JSON parsing failed:', parseError);
+        console.error('Failed to parse content:', storyResponse.substring(0, 500));
+        
+        // Create fallback story
+        console.log('Creating fallback story...');
         parsedStory = {
           title: `${request.childName}'s ${request.theme} Adventure`,
-          pages
+          pages: [] as Array<{ text: string }>
         };
+        
+        // Generate simple fallback pages
+        const fallbackTexts = [
+          `Once upon a time, there was a ${request.childAge}-year-old ${request.gender} named ${request.childName}.`,
+          `${request.childName} loved to go on ${request.theme} adventures.`,
+          `One day, ${request.childName} discovered something amazing during a ${request.theme} journey.`,
+          `${request.childName} learned something important from this ${request.theme} experience.`,
+          `And ${request.childName} lived happily ever after, always remembering this wonderful ${request.theme} adventure.`
+        ];
+        
+        for (let i = 0; i < expectedPages; i++) {
+          const pageData: { text: string } = {
+            text: fallbackTexts[i] || `${request.childName} continued the ${request.theme} adventure.`
+          };
+          parsedStory.pages.push(pageData);
+        }
       }
 
       setGenerationProgress(40);
 
       // Generate pages with or without images based on request
       const pages: StoryPage[] = [];
-      const expectedPages = request.pageCount || 5;
       const totalPages = Math.min(parsedStory.pages.length, expectedPages);
       
       if (request.includeIllustrations) {
@@ -471,6 +534,61 @@ export const [StoryProvider, useStories] = createContextHook(() => {
     const currentStories = storiesQuery.data || [];
     const updatedStories = currentStories.filter(s => s.id !== storyId);
     await saveStories(updatedStories);
+  }, [storiesQuery.data, saveStories]);
+
+  // Simple test story generation for debugging
+  const generateTestStory = useCallback(async (request: StoryGenerationRequest): Promise<Story> => {
+    console.log('=== GENERATING TEST STORY ===');
+    console.log('Test request:', request);
+    
+    setIsGenerating(true);
+    setGenerationProgress(0);
+    
+    try {
+      // Create a simple test story without API calls
+      setGenerationProgress(50);
+      
+      const expectedPages = request.pageCount || 5;
+      const pages: StoryPage[] = [];
+      
+      for (let i = 0; i < expectedPages; i++) {
+        pages.push({
+          id: `page-${i}`,
+          text: `Page ${i + 1}: ${request.childName} went on a ${request.theme} adventure. This is a test story to verify the system is working.`,
+          imageBase64: ''
+        });
+      }
+      
+      setGenerationProgress(100);
+      
+      const story: Story = {
+        id: Date.now().toString(),
+        title: `${request.childName}'s Test ${request.theme} Story`,
+        childName: request.childName,
+        childAge: request.childAge,
+        theme: request.theme,
+        language: request.language,
+        pages,
+        includeIllustrations: false,
+        gender: request.gender,
+        createdAt: new Date().toISOString()
+      };
+      
+      // Save to storage
+      const currentStories = storiesQuery.data || [];
+      const updatedStories = [story, ...currentStories];
+      console.log(`Saving test story "${story.title}" to storage`);
+      await saveStories(updatedStories);
+      console.log('Test story saved successfully');
+      
+      return story;
+    } catch (error) {
+      console.error('Test story generation failed:', error);
+      throw error;
+    } finally {
+      setIsGenerating(false);
+      setGenerationProgress(0);
+    }
   }, [storiesQuery.data, saveStories]);
 
   return useMemo(() => ({
