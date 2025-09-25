@@ -130,16 +130,29 @@ export const [StoryProvider, useStories] = createContextHook(() => {
 
       const storyData = await storyResponse.json();
       console.log('Story generation response received:', {
+        fullResponse: JSON.stringify(storyData, null, 2).substring(0, 500),
         hasCompletion: !!storyData.completion,
-        completionLength: storyData.completion?.length || 0,
-        completionPreview: storyData.completion?.substring(0, 200) + '...'
+        hasContent: !!storyData.content,
+        hasChoices: !!storyData.choices,
+        hasMessage: !!storyData.message
       });
       let parsedStory;
       
       try {
-        // Clean the response to ensure it's valid JSON
-        let cleanedResponse = storyData.completion.trim();
-        console.log('Raw completion:', cleanedResponse.substring(0, 500));
+        // Handle different API response formats
+        let cleanedResponse = '';
+        if (storyData.completion) {
+          cleanedResponse = storyData.completion.trim();
+        } else if (storyData.content) {
+          cleanedResponse = storyData.content.trim();
+        } else if (storyData.choices && storyData.choices[0] && storyData.choices[0].message) {
+          cleanedResponse = storyData.choices[0].message.content.trim();
+        } else if (storyData.message && storyData.message.content) {
+          cleanedResponse = storyData.message.content.trim();
+        } else {
+          throw new Error('No valid content found in API response');
+        }
+        console.log('Raw content:', cleanedResponse.substring(0, 500));
         
         if (cleanedResponse.startsWith('```json')) {
           cleanedResponse = cleanedResponse.replace(/```json\s*/, '').replace(/```\s*$/, '');
@@ -159,10 +172,11 @@ export const [StoryProvider, useStories] = createContextHook(() => {
         }
       } catch (error) {
         console.error('JSON parsing error:', error);
-        console.error('Failed to parse completion:', storyData.completion);
+        console.error('Failed to parse content:', 'No content found');
+        console.error('Full API response:', JSON.stringify(storyData, null, 2));
         // Fallback if JSON parsing fails - create requested number of pages
         const expectedPages = request.pageCount || 5;
-        const fallbackText = storyData.completion || `Once upon a time, ${request.childName} went on a wonderful ${request.theme} adventure.`;
+        const fallbackText = `Once upon a time, ${request.childName} went on a wonderful ${request.theme} adventure.`;
         const sentences = fallbackText.split(/[.!?]+/).filter((s: string) => s.trim().length > 0);
         const pages = [];
         for (let i = 0; i < expectedPages; i++) {

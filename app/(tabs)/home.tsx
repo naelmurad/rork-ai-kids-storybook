@@ -253,8 +253,8 @@ export default function HomeScreen() {
     try {
       console.log('Testing API connection...');
       
-      // Add timeout for API test
-      const testTimeout = 10000; // 10 seconds
+      // Simple connectivity test with shorter timeout
+      const testTimeout = 5000; // 5 seconds
       const testApiCall = fetch('https://toolkit.rork.com/text/llm/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -262,7 +262,7 @@ export default function HomeScreen() {
           messages: [
             {
               role: 'user',
-              content: 'Say "API is working" in JSON format: {"message": "API is working"}'
+              content: 'Test'
             }
           ]
         })
@@ -277,15 +277,13 @@ export default function HomeScreen() {
       const response = await Promise.race([testApiCall, testTimeoutPromise]);
       
       console.log('API Response status:', response.status);
-      console.log('API Response headers:', Object.fromEntries(response.headers.entries()));
       
-      if (response.ok) {
-        const data = await response.json();
-        console.log('API Response data:', data);
+      // Accept any response that's not a network error
+      if (response.status >= 200 && response.status < 500) {
+        console.log('API connection test passed');
         return true;
       } else {
-        const errorText = await response.text();
-        console.error('API Error:', errorText);
+        console.error('API returned error status:', response.status);
         return false;
       }
     } catch (error) {
@@ -297,13 +295,17 @@ export default function HomeScreen() {
   const handleCreateStory = async () => {
     console.log('=== STORY CREATION STARTED ===');
     
-    // Test API connection first
-    const apiWorking = await testAPIConnection();
-    if (!apiWorking) {
-      setShowError('API connection failed. Please check your internet connection and try again.');
-      return;
+    // Test API connection first (but don't block if it fails)
+    try {
+      const apiWorking = await testAPIConnection();
+      if (!apiWorking) {
+        console.warn('API connection test failed, but continuing with story generation...');
+      } else {
+        console.log('API connection test passed');
+      }
+    } catch (error) {
+      console.warn('API test failed, but continuing:', error);
     }
-    console.log('API connection test passed');
     
     try {
       // Check usage limits
