@@ -305,6 +305,16 @@ export default function HomeScreen() {
       avatarUri: avatarUri ? 'provided' : 'not provided'
     });
     
+    // Add debugging for the Rork Toolkit SDK
+    try {
+      const { generateText } = await import('@rork/toolkit-sdk');
+      console.log('Rork Toolkit SDK imported successfully:', typeof generateText);
+    } catch (sdkError) {
+      console.error('Failed to import Rork Toolkit SDK:', sdkError);
+      setShowError('SDK import failed: ' + (sdkError instanceof Error ? sdkError.message : String(sdkError)));
+      return;
+    }
+    
     // Test API connection first (but don't block if it fails)
     try {
       const apiWorking = await testAPIConnection();

@@ -84,8 +84,7 @@ export const [StoryProvider, useStories] = createContextHook(() => {
       
       console.log('Making API request to generate story text...');
       
-      // Add timeout for the story generation API call
-      const storyGenerationTimeout = 45000; // 45 seconds for better reliability
+
       
       console.log('Making story generation API request...');
       console.log('Request details:', {
@@ -97,81 +96,31 @@ export const [StoryProvider, useStories] = createContextHook(() => {
         gender: request.gender
       });
       
-      const storyApiCall = fetch('https://toolkit.rork.com/text/llm/', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          messages: [
-            {
-              role: 'system',
-              content: `You are a children's story writer. Create a beautiful, age-appropriate bedtime story in ${getLanguageName(request.language)}. The story should be exactly ${request.pageCount || 5} pages long, with each page having 2-3 sentences. Make it engaging, educational, and suitable for a ${request.childAge}-year-old child. Always respond with valid JSON only. IMPORTANT: Write the ENTIRE story (title and all page text) in ${getLanguageName(request.language)} language.`
-            },
-            {
-              role: 'user',
-              content: `Create a ${request.theme} story for ${request.childName}, age ${request.childAge}. The child's name is "${request.childName}" and they are ${request.childAge} years old. IMPORTANT: Write the ENTIRE story (including the child's name and all text) in ${getLanguageName(request.language)} language. The main character should be the SAME PERSON throughout the entire story - ${request.childName} is a ${request.childAge}-year-old ${request.gender}. Keep the character consistent in appearance, personality, and actions across all pages. CRITICAL: Use ONLY the name "${request.childName}" throughout the story - this name should appear in ${getLanguageName(request.language)} language in the story text. Format the response as JSON with this exact structure:
-              {
-                "title": "Story Title in ${getLanguageName(request.language)}",
-                "pages": [
-                  ${Array.from({length: request.pageCount || 5}, (_, i) => `{"text": "Page ${i + 1} text here in ${getLanguageName(request.language)}"}`).join(',\n                  ')}
-                ]
-              }
-              Make sure there are exactly ${request.pageCount || 5} pages. Use the child's name ${request.childName} throughout the story in ${getLanguageName(request.language)} language. Remember: ${request.childName} is the ONLY main character and should remain consistent.`
-            }
-          ]
-        })
-      });
+      // Use the new Rork Toolkit SDK for text generation
+      const { generateText } = await import('@rork/toolkit-sdk');
       
-      const storyTimeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('Story text generation timed out'));
-        }, storyGenerationTimeout);
-      });
+      console.log('Using Rork Toolkit SDK for story generation...');
       
-      const storyResponse = await Promise.race([storyApiCall, storyTimeoutPromise]);
-
-      if (!storyResponse.ok) {
-        let errorText = 'Unknown error';
-        try {
-          errorText = await storyResponse.text();
-        } catch (e) {
-          console.error('Could not read error response:', e);
-        }
-        console.error('Story generation API failed:', {
-          status: storyResponse.status,
-          statusText: storyResponse.statusText,
-          errorBody: errorText,
-          url: storyResponse.url
-        });
-        throw new Error(`Story generation API failed: ${storyResponse.status} ${storyResponse.statusText}`);
+      const storyPrompt = `Create a ${request.theme} story for ${request.childName}, age ${request.childAge}. The child's name is "${request.childName}" and they are ${request.childAge} years old. IMPORTANT: Write the ENTIRE story (including the child's name and all text) in ${getLanguageName(request.language)} language. The main character should be the SAME PERSON throughout the entire story - ${request.childName} is a ${request.childAge}-year-old ${request.gender}. Keep the character consistent in appearance, personality, and actions across all pages. CRITICAL: Use ONLY the name "${request.childName}" throughout the story - this name should appear in ${getLanguageName(request.language)} language in the story text. Format the response as JSON with this exact structure:
+      {
+        "title": "Story Title in ${getLanguageName(request.language)}",
+        "pages": [
+          ${Array.from({length: request.pageCount || 5}, (_, i) => `{"text": "Page ${i + 1} text here in ${getLanguageName(request.language)}"}`).join(',\n          ')}
+        ]
       }
-
-      const storyData = await storyResponse.json();
+      Make sure there are exactly ${request.pageCount || 5} pages. Use the child's name ${request.childName} throughout the story in ${getLanguageName(request.language)} language. Remember: ${request.childName} is the ONLY main character and should remain consistent.`;
+      
+      const storyResponse = await generateText(storyPrompt);
+      
       console.log('Story generation response received:', {
-        fullResponse: JSON.stringify(storyData, null, 2).substring(0, 500),
-        hasCompletion: !!storyData.completion,
-        hasContent: !!storyData.content,
-        hasChoices: !!storyData.choices,
-        hasMessage: !!storyData.message
+        responseLength: storyResponse?.length || 0,
+        responsePreview: storyResponse?.substring(0, 200) || 'No response'
       });
       let parsedStory;
       
       try {
-        // Handle different API response formats
-        let cleanedResponse = '';
-        if (storyData.completion) {
-          cleanedResponse = storyData.completion.trim();
-        } else if (storyData.content) {
-          cleanedResponse = storyData.content.trim();
-        } else if (storyData.choices && storyData.choices[0] && storyData.choices[0].message) {
-          cleanedResponse = storyData.choices[0].message.content.trim();
-        } else if (storyData.message && storyData.message.content) {
-          cleanedResponse = storyData.message.content.trim();
-        } else {
-          throw new Error('No valid content found in API response');
-        }
+        // The generateText function returns the text directly
+        let cleanedResponse = storyResponse.trim();
         console.log('Raw content:', cleanedResponse.substring(0, 500));
         
         if (cleanedResponse.startsWith('```json')) {
@@ -192,8 +141,7 @@ export const [StoryProvider, useStories] = createContextHook(() => {
         }
       } catch (error) {
         console.error('JSON parsing error:', error);
-        console.error('Failed to parse content:', 'No content found');
-        console.error('Full API response:', JSON.stringify(storyData, null, 2));
+        console.error('Failed to parse content:', storyResponse?.substring(0, 1000) || 'No content found');
         // Fallback if JSON parsing fails - create requested number of pages
         const expectedPages = request.pageCount || 5;
         const fallbackText = `Once upon a time, ${request.childName} went on a wonderful ${request.theme} adventure.`;
@@ -295,43 +243,44 @@ export const [StoryProvider, useStories] = createContextHook(() => {
                   
                   if (imageResponse.ok) {
                     const imageBlob = await imageResponse.blob();
-                    const reader = new FileReader();
-                    avatarBase64 = await new Promise((resolve, reject) => {
-                      reader.onload = () => {
-                        const result = reader.result as string;
-                        resolve(result.replace(/^data:image\/[a-z]+;base64,/, ''));
-                      };
-                      reader.onerror = reject;
-                      reader.readAsDataURL(imageBlob);
-                      // Add timeout for FileReader
-                      setTimeout(() => reject(new Error('FileReader timeout')), 10000);
-                    });
+                    // Use a more reliable base64 conversion method
+                    const arrayBuffer = await imageBlob.arrayBuffer();
+                    const bytes = new Uint8Array(arrayBuffer);
+                    let binary = '';
+                    for (let i = 0; i < bytes.byteLength; i++) {
+                      binary += String.fromCharCode(bytes[i]);
+                    }
+                    avatarBase64 = btoa(binary);
                   }
                 } else {
                   avatarBase64 = validAvatarUri;
                 }
                 
                 if (avatarBase64 && avatarBase64.length > 10) {
-                  const editResponse = await generateImageWithTimeout(
-                    () => fetch('https://toolkit.rork.com/images/edit/', {
+                  // Use the new Rork Toolkit SDK for image editing
+                  try {
+
+                    
+                    const editResult = await fetch('https://toolkit.rork.com/images/edit/', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
                         prompt: `Create a children's book illustration for page ${i + 1} of ${expectedPages}. Scene: "${page.text}". Use the child from the provided avatar image as the ONLY main character. CRITICAL: The character must look EXACTLY like the avatar in every detail - same face, same hair, same features. Make it ${characterInfo.style}, colorful, friendly, and safe for children. Theme: ${request.theme}. This is ${request.childName}, maintain identical appearance. NO OTHER CHILDREN in the scene. NO TEXT OR WRITING in the image.`,
                         images: [{ type: 'image', image: avatarBase64 }]
                       })
-                    }),
-                    25000
-                  );
-                  
-                  if (editResponse.ok) {
-                    const editData = await editResponse.json();
-                    if (editData.image && editData.image.base64Data) {
-                      imageBase64 = editData.image.base64Data;
-                      console.log(`Successfully generated illustration with avatar for page ${i + 1}`);
+                    });
+                    
+                    if (editResult.ok) {
+                      const editData = await editResult.json();
+                      if (editData.image && editData.image.base64Data) {
+                        imageBase64 = editData.image.base64Data;
+                        console.log(`Successfully generated illustration with avatar for page ${i + 1}`);
+                      }
+                    } else {
+                      console.log(`Avatar edit API returned ${editResult.status} for page ${i + 1}`);
                     }
-                  } else {
-                    console.log(`Avatar edit API returned ${editResponse.status} for page ${i + 1}`);
+                  } catch (sdkError) {
+                    console.error(`SDK error for page ${i + 1}:`, sdkError);
                   }
                 }
               } catch (error) {
@@ -343,26 +292,29 @@ export const [StoryProvider, useStories] = createContextHook(() => {
             if (!imageBase64) {
               try {
                 console.log(`Generating regular illustration for page ${i + 1}...`);
-                const imageResponse = await generateImageWithTimeout(
-                  () => fetch('https://toolkit.rork.com/images/generate/', {
+                // Use direct API call for image generation with better error handling
+                try {
+                  const imageResponse = await fetch('https://toolkit.rork.com/images/generate/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       prompt: `Children's book illustration page ${i + 1} of ${expectedPages}. ${baseCharacterPrompt} SCENE: "${page.text}". Style: ${characterInfo.style}, colorful, friendly, safe for children. Theme: ${request.theme}. IMPORTANT: Show the SAME character ${request.childName} as described above. NO OTHER CHILDREN in the scene. NO TEXT OR WRITING in the image. Focus on the scene while keeping the character identical to previous pages.`,
                       size: '1024x1024'
                     })
-                  }),
-                  25000
-                );
+                  });
 
-                if (imageResponse.ok) {
-                  const imageData = await imageResponse.json();
-                  if (imageData.image && imageData.image.base64Data) {
-                    imageBase64 = imageData.image.base64Data;
-                    console.log(`Successfully generated regular illustration for page ${i + 1}`);
+                  if (imageResponse.ok) {
+                    const imageData = await imageResponse.json();
+                    if (imageData.image && imageData.image.base64Data) {
+                      imageBase64 = imageData.image.base64Data;
+                      console.log(`Successfully generated regular illustration for page ${i + 1}`);
+                    }
+                  } else {
+                    const errorText = await imageResponse.text();
+                    console.log(`Image generation API returned ${imageResponse.status} for page ${i + 1}:`, errorText);
                   }
-                } else {
-                  console.log(`Image generation API returned ${imageResponse.status} for page ${i + 1}`);
+                } catch (apiError) {
+                  console.error(`API error for page ${i + 1}:`, apiError);
                 }
               } catch (error) {
                 console.error(`Error with regular image generation for page ${i + 1}:`, error);
