@@ -51,6 +51,17 @@ export default function HomeScreen() {
   const [validationErrors, setValidationErrors] = useState<{[key: string]: boolean}>({});
   const [showPremiumUpgrade, setShowPremiumUpgrade] = useState(false);
   
+  // Add cleanup effect to ensure all modals are closed when component unmounts
+  React.useEffect(() => {
+    return () => {
+      // Cleanup function to reset all modal states
+      setShowCreateModal(false);
+      setSelectedStory(null);
+      setShowError(null);
+      setShowPremiumUpgrade(false);
+    };
+  }, []);
+  
   // Form state
   const [childName, setChildName] = useState('');
   const [childAge, setChildAge] = useState('');
@@ -319,6 +330,21 @@ export default function HomeScreen() {
     }
   };
 
+  const resetFormState = React.useCallback(() => {
+    console.log('Resetting form state...');
+    setChildName('');
+    setChildAge('');
+    setSelectedTheme('adventure');
+    setSelectedLanguage(currentLanguage);
+    setCustomTheme('');
+    setAvatarUri(null);
+    setPageCount(5);
+    setStoryMode('illustrated');
+    setSelectedGender('boy');
+    setValidationErrors({});
+    setShowError(null);
+  }, [currentLanguage]);
+
   const handleCreateStory = async () => {
     console.log('=== STORY CREATION STARTED ===');
     console.log('Current form state:', {
@@ -498,19 +524,8 @@ export default function HomeScreen() {
       
       // Close modal and show story after generation is complete
       setShowCreateModal(false);
+      resetFormState();
       setSelectedStory(story);
-      
-      // Reset form
-      setChildName('');
-      setChildAge('');
-      setSelectedTheme('adventure');
-      setSelectedLanguage(currentLanguage);
-      setCustomTheme('');
-      setAvatarUri(null);
-      setPageCount(5);
-      setStoryMode('illustrated');
-      setSelectedGender('boy');
-      setValidationErrors({});
       
       console.log('=== STORY CREATION COMPLETED SUCCESSFULLY ===');
       
@@ -587,6 +602,7 @@ export default function HomeScreen() {
       visible={!!showError}
       transparent
       animationType="fade"
+      onRequestClose={() => setShowError(null)}
     >
       <View style={styles.errorOverlay}>
         <View style={styles.errorModal}>
@@ -608,6 +624,12 @@ export default function HomeScreen() {
       visible={showCreateModal}
       animationType="slide"
       presentationStyle="pageSheet"
+      onRequestClose={() => {
+        if (!isGenerating) {
+          setShowCreateModal(false);
+          resetFormState();
+        }
+      }}
     >
       <View style={styles.modalContainer}>
         <LinearGradient
@@ -620,12 +642,7 @@ export default function HomeScreen() {
               onPress={() => {
                 if (!isGenerating) {
                   setShowCreateModal(false);
-                  setAvatarUri(null);
-                  setCustomTheme('');
-                  setPageCount(5);
-                  setStoryMode('illustrated');
-                  setSelectedGender('boy');
-                  setValidationErrors({});
+                  resetFormState();
                 }
               }}
               style={[styles.modalCloseButton, isGenerating && styles.modalCloseButtonDisabled]}
@@ -922,10 +939,19 @@ export default function HomeScreen() {
     if (!selectedStory) return null;
     
     return (
-      <Modal visible={true} animationType="slide" presentationStyle="fullScreen">
+      <Modal 
+        visible={true} 
+        animationType="slide" 
+        presentationStyle="fullScreen"
+        onRequestClose={() => setSelectedStory(null)}
+      >
         <StoryReader
           story={selectedStory}
-          onClose={() => setSelectedStory(null)}
+          onClose={() => {
+            setSelectedStory(null);
+            // Ensure we're back to a clean state
+            resetFormState();
+          }}
         />
       </Modal>
     );
@@ -1005,7 +1031,15 @@ export default function HomeScreen() {
             styles.createStoryButton,
             !canCreateStory && styles.createStoryButtonDisabled
           ]}
-          onPress={() => canCreateStory ? setShowCreateModal(true) : setShowPremiumUpgrade(true)}
+          onPress={() => {
+            console.log('Create story button pressed, canCreateStory:', canCreateStory);
+            if (canCreateStory) {
+              resetFormState();
+              setShowCreateModal(true);
+            } else {
+              setShowPremiumUpgrade(true);
+            }
+          }}
           activeOpacity={0.8}
         >
           <LinearGradient
@@ -1128,7 +1162,10 @@ export default function HomeScreen() {
               <React.Fragment key={story.id}>
                 <StoryCard
                   story={story}
-                  onPress={() => setSelectedStory(story)}
+                  onPress={() => {
+                    console.log('Story card pressed:', story.title);
+                    setSelectedStory(story);
+                  }}
                 />
                 {/* Show banner ad after every 3rd story */}
                 {(index + 1) % 3 === 0 && (
