@@ -84,21 +84,17 @@ export default function DebugConsole() {
     if (!autoOpenOnGenerate || visible || logs.length === 0) return;
     
     const latestLog = logs[logs.length - 1];
-    if (/STORY STORE|STORY CREATION|Story generation|generateStory/i.test(latestLog.message)) {
-      // Use requestAnimationFrame + setTimeout to ensure we're not in render cycle
-      let timerId: NodeJS.Timeout;
-      const rafId = requestAnimationFrame(() => {
-        timerId = setTimeout(() => {
-          setVisible(true);
-        }, 50);
-      });
+    if (latestLog && /STORY STORE|STORY CREATION|Story generation|generateStory/i.test(latestLog.message)) {
+      // Use a more reliable approach to prevent setState during render
+      const timerId = setTimeout(() => {
+        setVisible(true);
+      }, 100);
       
       return () => {
-        cancelAnimationFrame(rafId);
-        if (timerId) clearTimeout(timerId);
+        clearTimeout(timerId);
       };
     }
-  }, [logs, autoOpenOnGenerate, visible]);
+  }, [logs, autoOpenOnGenerate, visible]); // Include logs dependency
 
   const filteredLogs = useMemo(() => {
     if (!onlyStoryLogs) return logs;

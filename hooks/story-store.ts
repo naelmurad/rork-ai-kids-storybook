@@ -137,11 +137,13 @@ export const [StoryProvider, useStories] = createContextHook(() => {
       });
       
       // Enhanced story prompt with explicit language instruction
-      const storyPrompt = `IMPORTANT: Write the entire story in ${languageName} language. Create a ${expectedPages}-page children's story about ${request.childName}, a ${request.childAge}-year-old ${request.gender}. Theme: ${request.theme}. 
+      const storyPrompt = `CRITICAL INSTRUCTION: You MUST write the entire response in ${languageName} language only. Do not use any English words.
 
-CRITICAL: All text must be written in ${languageName}. The title and all page content must be in ${languageName}.
+${request.language === 'ar' ? 'اكتب القصة كاملة باللغة العربية فقط. لا تستخدم أي كلمات إنجليزية.' : ''}
 
-Return ONLY valid JSON in this exact format:
+Create a ${expectedPages}-page children's story about ${request.childName}, a ${request.childAge}-year-old ${request.gender}. Theme: ${request.theme}.
+
+Return ONLY valid JSON in this exact format (but with all text content in ${languageName}):
 {
   "title": "Story title in ${languageName}",
   "pages": [
@@ -153,7 +155,7 @@ Return ONLY valid JSON in this exact format:
   ]
 }
 
-Make exactly ${expectedPages} pages. Use ${request.childName} as the main character throughout. Remember: ALL TEXT MUST BE IN ${languageName}.`;
+Make exactly ${expectedPages} pages. Use ${request.childName} as the main character throughout. REMEMBER: ALL STORY CONTENT MUST BE IN ${languageName} LANGUAGE.`;
       
       // Use direct API call instead of SDK for better error handling
       console.log('Making direct API call to text generation endpoint...');
@@ -325,8 +327,9 @@ Make exactly ${expectedPages} pages. Use ${request.childName} as the main charac
           console.log(`Starting illustration generation for page ${i + 1}/${totalPages}...`);
           
           try {
-            // Safer image generation with timeout and error handling
-            const safePrompt = `Children's book illustration: ${request.childName}, ${request.childAge}-year-old ${request.gender}, ${request.theme} theme. Cartoon style, bright colors, child-friendly.`;
+            // Enhanced image generation with better prompts
+            const pageContext = page.text.substring(0, 100); // Use page text for context
+            const safePrompt = `${baseCharacterPrompt} SCENE: ${pageContext}. Children's book illustration showing ${request.childName} in a ${request.theme} adventure. Bright, colorful, cartoon style, Disney-like animation, child-friendly, safe content, high quality illustration.`;
             
             // Add timeout to prevent hanging
             const controller = new AbortController();
@@ -337,7 +340,7 @@ Make exactly ${expectedPages} pages. Use ${request.childName} as the main charac
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 prompt: safePrompt,
-                size: '512x512'
+                size: '1024x1024'
               }),
               signal: controller.signal
             });
@@ -375,15 +378,27 @@ Make exactly ${expectedPages} pages. Use ${request.childName} as the main charac
         console.log('Waiting for all illustrations to complete...');
         let imageResults;
         try {
-          // Add overall timeout for all image generation
-          const allImagesPromise = Promise.allSettled(imagePromises);
-          const overallTimeout = new Promise<never>((_, reject) => {
-            setTimeout(() => reject(new Error('Image generation timeout')), 120000); // 2 minutes total
-          });
+          // Process images in smaller batches to prevent timeout
+          const batchSize = 2;
+          const batches = [];
+          for (let i = 0; i < imagePromises.length; i += batchSize) {
+            batches.push(imagePromises.slice(i, i + batchSize));
+          }
           
-          imageResults = await Promise.race([allImagesPromise, overallTimeout]);
+          const allResults = [];
+          for (const batch of batches) {
+            console.log(`Processing batch of ${batch.length} images...`);
+            const batchResults = await Promise.allSettled(batch);
+            allResults.push(...batchResults);
+            // Small delay between batches
+            if (batches.indexOf(batch) < batches.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+          }
+          
+          imageResults = allResults;
         } catch (error) {
-          console.error('Image generation timed out or failed:', error);
+          console.error('Image generation failed:', error);
           // Create empty results if timeout
           imageResults = imagePromises.map(() => ({ status: 'rejected' as const, reason: 'timeout' }));
         }
