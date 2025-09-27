@@ -79,13 +79,18 @@ export default function DebugConsole() {
     };
   }, [addLog]);
 
-  // Auto-open logic moved to useEffect to prevent render-time state updates
+  // Auto-open logic with debouncing to prevent render-time state updates
   useEffect(() => {
-    if (autoOpenOnGenerate && !visible && logs.length > 0) {
-      const latestLog = logs[logs.length - 1];
-      if (/STORY STORE|STORY CREATION|Story generation|generateStory/i.test(latestLog.message)) {
+    if (!autoOpenOnGenerate || visible || logs.length === 0) return;
+    
+    const latestLog = logs[logs.length - 1];
+    if (/STORY STORE|STORY CREATION|Story generation|generateStory/i.test(latestLog.message)) {
+      // Use setTimeout to avoid setState during render
+      const timer = setTimeout(() => {
         setVisible(true);
-      }
+      }, 100);
+      
+      return () => clearTimeout(timer);
     }
   }, [logs, autoOpenOnGenerate, visible]);
 

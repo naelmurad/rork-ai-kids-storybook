@@ -75,6 +75,12 @@ export const [StoryProvider, useStories] = createContextHook(() => {
     console.log('Avatar provided:', !!childAvatar, typeof childAvatar);
     console.log('Avatar length:', childAvatar?.length || 0);
     
+    // Prevent concurrent generations
+    if (isGenerating) {
+      console.log('Story generation already in progress, rejecting new request');
+      throw new Error('Story generation already in progress');
+    }
+    
     // Validate request first
     if (!request.childName || !request.childName.trim()) {
       throw new Error('Child name is required');
@@ -521,11 +527,9 @@ Make exactly ${expectedPages} pages. Use ${request.childName} as the main charac
       throw error;
     } finally {
       console.log('=== STORY GENERATION CLEANUP ===');
-      // Ensure cleanup always happens
-      setTimeout(() => {
-        setIsGenerating(false);
-        setGenerationProgress(0);
-      }, 100);
+      // Ensure cleanup always happens immediately
+      setIsGenerating(false);
+      setGenerationProgress(0);
     }
   }, [storiesQuery.data, saveStories]);
 

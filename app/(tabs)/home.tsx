@@ -358,6 +358,12 @@ export default function HomeScreen() {
       avatarUri: avatarUri ? 'provided' : 'not provided'
     });
     
+    // Prevent multiple simultaneous generations
+    if (isGenerating) {
+      console.log('Story generation already in progress, ignoring request');
+      return;
+    }
+    
     // Test API connectivity instead of SDK import
     console.log('Checking API connectivity...');
     try {
@@ -524,14 +530,23 @@ export default function HomeScreen() {
       
       // Close modal and show story after generation is complete
       console.log('Story generation completed - updating UI states');
-      setShowCreateModal(false);
-      resetFormState();
       
-      // Small delay to ensure modal closes before opening story reader
-      setTimeout(() => {
-        console.log('Opening story reader for:', story.title);
-        setSelectedStory(story);
-      }, 300);
+      // Use a more reliable approach to handle modal transitions
+      const handleStoryComplete = () => {
+        console.log('Handling story completion...');
+        setShowCreateModal(false);
+        resetFormState();
+        
+        // Ensure modal is fully closed before opening story reader
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            console.log('Opening story reader for:', story.title);
+            setSelectedStory(story);
+          }, 500); // Longer delay to ensure smooth transition
+        });
+      };
+      
+      handleStoryComplete();
       
       console.log('=== STORY CREATION COMPLETED SUCCESSFULLY ===');
       
@@ -600,6 +615,8 @@ export default function HomeScreen() {
         isGenerating,
         errorMessage
       });
+      
+      // Note: Generation state is managed by the story store and will be reset automatically
     }
   };
 
