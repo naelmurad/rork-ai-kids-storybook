@@ -136,8 +136,12 @@ export const [StoryProvider, useStories] = createContextHook(() => {
         gender: request.gender
       });
       
-      // Simplified story prompt for better reliability
-      const storyPrompt = `Create a ${expectedPages}-page children's story about ${request.childName}, a ${request.childAge}-year-old ${request.gender}. Theme: ${request.theme}. Write in ${languageName}. Return ONLY valid JSON in this exact format:
+      // Enhanced story prompt with explicit language instruction
+      const storyPrompt = `IMPORTANT: Write the entire story in ${languageName} language. Create a ${expectedPages}-page children's story about ${request.childName}, a ${request.childAge}-year-old ${request.gender}. Theme: ${request.theme}. 
+
+CRITICAL: All text must be written in ${languageName}. The title and all page content must be in ${languageName}.
+
+Return ONLY valid JSON in this exact format:
 {
   "title": "Story title in ${languageName}",
   "pages": [
@@ -148,7 +152,8 @@ export const [StoryProvider, useStories] = createContextHook(() => {
     {"text": "Page 5 story text in ${languageName}"}
   ]
 }
-Make exactly ${expectedPages} pages. Use ${request.childName} as the main character throughout.`;
+
+Make exactly ${expectedPages} pages. Use ${request.childName} as the main character throughout. Remember: ALL TEXT MUST BE IN ${languageName}.`;
       
       // Use direct API call instead of SDK for better error handling
       console.log('Making direct API call to text generation endpoint...');
@@ -312,40 +317,52 @@ Make exactly ${expectedPages} pages. Use ${request.childName} as the main charac
         const characterInfo = getCharacterDescription(request.gender || 'boy', request.childAge);
         const baseCharacterPrompt = `MAIN CHARACTER DESCRIPTION (MUST BE IDENTICAL IN ALL PAGES): ${characterInfo.appearance}. CHARACTER NAME: ${request.childName}. CRITICAL: This exact character appearance must be maintained throughout all illustrations - same hair, same eyes, same face, same clothes, same proportions.`;
         
-        // Generate images with parallel processing and optimized settings
-        console.log('Starting optimized parallel image generation...');
+        // Generate images with better error handling and crash prevention
+        console.log('Starting safe image generation...');
         
-        // Create all image generation promises at once for parallel processing
+        // Create all image generation promises with better error handling
         const imagePromises = parsedStory.pages.slice(0, totalPages).map(async (page: { text: string }, i: number) => {
           console.log(`Starting illustration generation for page ${i + 1}/${totalPages}...`);
           
           try {
-            // Simplified and faster image generation with smaller size
-            const optimizedPrompt = `Children's book illustration: ${request.childName}, ${request.childAge}-year-old ${request.gender}, ${request.theme} theme. Scene: "${page.text.substring(0, 100)}". Cartoon style, bright colors, child-friendly. Simple composition, clear focus.`;
+            // Safer image generation with timeout and error handling
+            const safePrompt = `Children's book illustration: ${request.childName}, ${request.childAge}-year-old ${request.gender}, ${request.theme} theme. Cartoon style, bright colors, child-friendly.`;
+            
+            // Add timeout to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout per image
             
             const imageResponse = await fetch('https://toolkit.rork.com/images/generate/', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                prompt: optimizedPrompt,
-                size: '512x512' // Smaller size for faster generation
-              })
+                prompt: safePrompt,
+                size: '512x512'
+              }),
+              signal: controller.signal
             });
+            
+            clearTimeout(timeoutId);
 
             if (imageResponse.ok) {
               const imageData = await imageResponse.json();
-              if (imageData.image && imageData.image.base64Data) {
-                console.log(`✅ Page ${i + 1} illustration generated successfully`);
-                return {
-                  pageIndex: i,
-                  imageBase64: imageData.image.base64Data
-                };
+              if (imageData?.image?.base64Data && typeof imageData.image.base64Data === 'string') {
+                const base64Data = imageData.image.base64Data.trim();
+                if (base64Data.length > 100) { // Basic validation
+                  console.log(`✅ Page ${i + 1} illustration generated successfully`);
+                  return {
+                    pageIndex: i,
+                    imageBase64: base64Data
+                  };
+                }
               }
+              console.log(`❌ Page ${i + 1} - invalid image data received`);
             } else {
               console.log(`❌ Page ${i + 1} API error: ${imageResponse.status}`);
             }
           } catch (error) {
             console.error(`❌ Page ${i + 1} generation error:`, error);
+            // Don't throw, just return empty result
           }
           
           return {
@@ -354,15 +371,28 @@ Make exactly ${expectedPages} pages. Use ${request.childName} as the main charac
           };
         });
         
-        // Wait for all images to complete with progress updates
+        // Wait for all images to complete with better error handling
         console.log('Waiting for all illustrations to complete...');
-        const imageResults = await Promise.allSettled(imagePromises);
+        let imageResults;
+        try {
+          // Add overall timeout for all image generation
+          const allImagesPromise = Promise.allSettled(imagePromises);
+          const overallTimeout = new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error('Image generation timeout')), 120000); // 2 minutes total
+          });
+          
+          imageResults = await Promise.race([allImagesPromise, overallTimeout]);
+        } catch (error) {
+          console.error('Image generation timed out or failed:', error);
+          // Create empty results if timeout
+          imageResults = imagePromises.map(() => ({ status: 'rejected' as const, reason: 'timeout' }));
+        }
         
         // Process results and create pages
         const imageMap = new Map<number, string>();
         let successfulImages = 0;
         
-        imageResults.forEach((result, index) => {
+        imageResults.forEach((result: any, index: number) => {
           if (result.status === 'fulfilled' && result.value.imageBase64) {
             const validImage = validateImageData(result.value.imageBase64, index + 1);
             if (validImage) {
@@ -450,7 +480,7 @@ Make exactly ${expectedPages} pages. Use ${request.childName} as the main charac
       setIsGenerating(false);
       setGenerationProgress(0);
     }
-  }, [storiesQuery.data, saveStories]);
+  }, [storiesQuery.data, saveStories, isGenerating]);
 
   const deleteStory = useCallback(async (storyId: string) => {
     const currentStories = storiesQuery.data || [];

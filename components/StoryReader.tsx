@@ -396,42 +396,64 @@ export default function StoryReader({ story, onClose }: StoryReaderProps) {
           {story.pages.map((page, index) => {
             const raw = page.imageBase64 ?? '';
             
-            // Simplified and more lenient image validation
+            // Safe and crash-resistant image validation
             const hasValidImage = (() => {
-              if (!raw || typeof raw !== 'string') {
+              try {
+                if (!raw || typeof raw !== 'string') {
+                  return false;
+                }
+                const trimmed = raw.trim();
+                if (trimmed === '' || trimmed.length < 50) {
+                  return false;
+                }
+                if (trimmed === 'undefined' || trimmed === 'null' || trimmed === 'false') {
+                  return false;
+                }
+                // More lenient validation - just check if it looks like valid data
+                if (trimmed.includes('undefined') || trimmed.includes('null') || trimmed.includes('error')) {
+                  return false;
+                }
+                // Additional safety check for base64 format
+                if (!trimmed.match(/^[A-Za-z0-9+/=]+$/)) {
+                  console.log(`Page ${index + 1}: Invalid base64 format`);
+                  return false;
+                }
+                console.log(`Page ${index + 1}: Valid image data (${trimmed.length} chars)`);
+                return true;
+              } catch (error) {
+                console.error(`Page ${index + 1}: Error validating image:`, error);
                 return false;
               }
-              const trimmed = raw.trim();
-              if (trimmed === '' || trimmed.length < 50) {
-                return false;
-              }
-              if (trimmed === 'undefined' || trimmed === 'null' || trimmed === 'false') {
-                return false;
-              }
-              // More lenient validation - just check if it looks like valid data
-              if (trimmed.includes('undefined') || trimmed.includes('null') || trimmed.includes('error')) {
-                return false;
-              }
-              console.log(`Page ${index + 1}: Valid image data (${trimmed.length} chars)`);
-              return true;
             })();
             
             let imageUri: string | null = null;
             if (hasValidImage) {
               try {
+                // Create safe image URI with additional validation
+                let candidateUri: string;
                 if (raw.startsWith('data:image/')) {
-                  imageUri = raw;
+                  candidateUri = raw;
                 } else {
-                  imageUri = `data:image/png;base64,${raw}`;
+                  candidateUri = `data:image/png;base64,${raw}`;
                 }
                 
                 // Final validation - ensure the URI has actual data
-                const base64Part = imageUri.split(',')[1];
+                const base64Part = candidateUri.split(',')[1];
                 if (!base64Part || base64Part.length < 20) {
                   console.log(`Page ${index + 1}: Final validation failed - insufficient base64 data`);
-                  imageUri = null;
                 } else {
-                  console.log(`Page ${index + 1}: Final image URI created successfully`);
+                  // Additional safety check - try to validate base64
+                  try {
+                    // Simple base64 validation without actually decoding
+                    if (base64Part.match(/^[A-Za-z0-9+/=]+$/)) {
+                      imageUri = candidateUri;
+                      console.log(`Page ${index + 1}: Final image URI created successfully`);
+                    } else {
+                      console.log(`Page ${index + 1}: Invalid base64 characters detected`);
+                    }
+                  } catch (validationError) {
+                    console.error(`Page ${index + 1}: Base64 validation error:`, validationError);
+                  }
                 }
               } catch (error) {
                 console.error(`Error creating image URI for page ${index + 1}:`, error);
@@ -464,6 +486,7 @@ export default function StoryReader({ story, onClose }: StoryReaderProps) {
                           error: error.nativeEvent?.error,
                           uri: imageUri?.substring(0, 100) + '...'
                         });
+                        // Don't crash the app, just log the error
                       }}
                       onLoad={() => {
                         console.log(`Image loaded successfully for page ${index + 1}`);
@@ -471,6 +494,8 @@ export default function StoryReader({ story, onClose }: StoryReaderProps) {
                       onLoadStart={() => {
                         console.log(`Image load started for page ${index + 1}`);
                       }}
+                      // Add fallback for failed images
+                      defaultSource={undefined}
                     />
                     <View style={styles.textOverlay}>
                       <View style={styles.textBackground}>

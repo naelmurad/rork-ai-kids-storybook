@@ -55,12 +55,38 @@ export default function HomeScreen() {
   React.useEffect(() => {
     return () => {
       // Cleanup function to reset all modal states
+      console.log('HomeScreen cleanup - resetting all modal states');
       setShowCreateModal(false);
       setSelectedStory(null);
       setShowError(null);
       setShowPremiumUpgrade(false);
     };
   }, []);
+  
+  // Prevent multiple modal states from being active simultaneously
+  React.useEffect(() => {
+    const activeModals = [
+      showCreateModal && 'create',
+      selectedStory && 'story',
+      showError && 'error',
+      showPremiumUpgrade && 'premium'
+    ].filter(Boolean);
+    
+    if (activeModals.length > 1) {
+      console.warn('Multiple modals active simultaneously:', activeModals);
+      // Close all except the most recent one
+      if (showError) {
+        // Error modal takes priority
+        setShowCreateModal(false);
+        setSelectedStory(null);
+        setShowPremiumUpgrade(false);
+      } else if (selectedStory) {
+        // Story reader takes priority over others
+        setShowCreateModal(false);
+        setShowPremiumUpgrade(false);
+      }
+    }
+  }, [showCreateModal, selectedStory, showError, showPremiumUpgrade]);
   
   // Form state
   const [childName, setChildName] = useState('');
@@ -534,16 +560,23 @@ export default function HomeScreen() {
       // Use a more reliable approach to handle modal transitions
       const handleStoryComplete = () => {
         console.log('Handling story completion...');
+        
+        // First, close the create modal and reset form
         setShowCreateModal(false);
         resetFormState();
         
-        // Ensure modal is fully closed before opening story reader
-        requestAnimationFrame(() => {
-          setTimeout(() => {
-            console.log('Opening story reader for:', story.title);
-            setSelectedStory(story);
-          }, 500); // Longer delay to ensure smooth transition
-        });
+        // Use a more reliable modal transition approach
+        const openStoryReader = () => {
+          console.log('Opening story reader for:', story.title);
+          // Ensure no other modals are open
+          setShowError(null);
+          setShowPremiumUpgrade(false);
+          // Then open story reader
+          setSelectedStory(story);
+        };
+        
+        // Use setTimeout with a reasonable delay for modal transition
+        setTimeout(openStoryReader, 300);
       };
       
       handleStoryComplete();
