@@ -7,6 +7,29 @@ import { generateText } from '@rork/toolkit-sdk';
 
 const STORIES_KEY = 'stories';
 
+// Helper function to validate image data
+const validateImageData = (imageBase64: string, pageNumber: number): string => {
+  if (!imageBase64 || typeof imageBase64 !== 'string') {
+    console.log(`Page ${pageNumber}: No image data provided`);
+    return '';
+  }
+  const trimmed = imageBase64.trim();
+  if (trimmed === '' || trimmed.length < 50) {
+    console.log(`Page ${pageNumber}: Image data too short (${trimmed.length} chars)`);
+    return '';
+  }
+  if (trimmed === 'undefined' || trimmed === 'null' || trimmed === 'false') {
+    console.log(`Page ${pageNumber}: Image data is invalid literal value`);
+    return '';
+  }
+  if (trimmed.includes('undefined') || trimmed.includes('null') || trimmed.includes('error')) {
+    console.log(`Page ${pageNumber}: Image data contains error indicators`);
+    return '';
+  }
+  console.log(`Page ${pageNumber}: Valid image data (${trimmed.length} chars)`);
+  return trimmed;
+};
+
 // Helper function to get language name for AI prompt
 const getLanguageName = (languageCode: string): string => {
   const languageNames: { [key: string]: string } = {
@@ -221,7 +244,7 @@ Make exactly ${expectedPages} pages. Use ${request.childName} as the main charac
         console.log('Creating fallback story...');
         parsedStory = {
           title: `${request.childName}'s ${request.theme} Adventure`,
-          pages: [] as Array<{ text: string }>
+          pages: [] as { text: string }[]
         };
         
         // Generate simple fallback pages
@@ -289,190 +312,86 @@ Make exactly ${expectedPages} pages. Use ${request.childName} as the main charac
         const characterInfo = getCharacterDescription(request.gender || 'boy', request.childAge);
         const baseCharacterPrompt = `MAIN CHARACTER DESCRIPTION (MUST BE IDENTICAL IN ALL PAGES): ${characterInfo.appearance}. CHARACTER NAME: ${request.childName}. CRITICAL: This exact character appearance must be maintained throughout all illustrations - same hair, same eyes, same face, same clothes, same proportions.`;
         
-        // Generate images with better error handling and timeout protection
-        console.log('Starting image generation with improved stability...');
+        // Generate images with parallel processing and optimized settings
+        console.log('Starting optimized parallel image generation...');
         
-        for (let i = 0; i < totalPages; i++) {
-          const page = parsedStory.pages[i];
-          let imageBase64 = '';
+        // Create all image generation promises at once for parallel processing
+        const imagePromises = parsedStory.pages.slice(0, totalPages).map(async (page: { text: string }, i: number) => {
+          console.log(`Starting illustration generation for page ${i + 1}/${totalPages}...`);
           
           try {
-            console.log(`Generating illustration for page ${i + 1}/${totalPages}...`);
+            // Simplified and faster image generation with smaller size
+            const optimizedPrompt = `Children's book illustration: ${request.childName}, ${request.childAge}-year-old ${request.gender}, ${request.theme} theme. Scene: "${page.text.substring(0, 100)}". Cartoon style, bright colors, child-friendly. Simple composition, clear focus.`;
             
-            // Add timeout wrapper for API calls
-            const generateImageWithTimeout = async (apiCall: () => Promise<any>, timeoutMs = 30000) => {
-              return Promise.race([
-                apiCall(),
-                new Promise((_, reject) => 
-                  setTimeout(() => reject(new Error('API call timeout')), timeoutMs)
-                )
-              ]);
-            };
-            
-            // Try avatar-based generation first if we have a valid avatar
-            if (validAvatarUri && validAvatarUri.length > 10) {
-              try {
-                let avatarBase64 = '';
-                
-                if (validAvatarUri.startsWith('http')) {
-                  // Fetch and convert URL to base64 with timeout
-                  const imageResponse = await generateImageWithTimeout(
-                    () => fetch(validAvatarUri, { 
-                      method: 'GET',
-                      headers: { 'Accept': 'image/*' }
-                    }),
-                    15000
-                  );
-                  
-                  if (imageResponse.ok) {
-                    const imageBlob = await imageResponse.blob();
-                    // Use a more reliable base64 conversion method
-                    const arrayBuffer = await imageBlob.arrayBuffer();
-                    const bytes = new Uint8Array(arrayBuffer);
-                    let binary = '';
-                    for (let i = 0; i < bytes.byteLength; i++) {
-                      binary += String.fromCharCode(bytes[i]);
-                    }
-                    avatarBase64 = btoa(binary);
-                  }
-                } else {
-                  avatarBase64 = validAvatarUri;
-                }
-                
-                if (avatarBase64 && avatarBase64.length > 10) {
-                  // Use the new Rork Toolkit SDK for image editing
-                  try {
+            const imageResponse = await fetch('https://toolkit.rork.com/images/generate/', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                prompt: optimizedPrompt,
+                size: '512x512' // Smaller size for faster generation
+              })
+            });
 
-                    
-                    const editResult = await fetch('https://toolkit.rork.com/images/edit/', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        prompt: `Create a children's book illustration for page ${i + 1} of ${expectedPages}. Scene: "${page.text}". Use the child from the provided avatar image as the ONLY main character. CRITICAL: The character must look EXACTLY like the avatar in every detail - same face, same hair, same features. Make it ${characterInfo.style}, colorful, friendly, and safe for children. Theme: ${request.theme}. This is ${request.childName}, maintain identical appearance. NO OTHER CHILDREN in the scene. NO TEXT OR WRITING in the image.`,
-                        images: [{ type: 'image', image: avatarBase64 }]
-                      })
-                    });
-                    
-                    if (editResult.ok) {
-                      const editData = await editResult.json();
-                      if (editData.image && editData.image.base64Data) {
-                        imageBase64 = editData.image.base64Data;
-                        console.log(`Successfully generated illustration with avatar for page ${i + 1}`);
-                      }
-                    } else {
-                      console.log(`Avatar edit API returned ${editResult.status} for page ${i + 1}`);
-                    }
-                  } catch (sdkError) {
-                    console.error(`SDK error for page ${i + 1}:`, sdkError);
-                  }
-                }
-              } catch (error) {
-                console.error(`Error with avatar-based generation for page ${i + 1}:`, error);
+            if (imageResponse.ok) {
+              const imageData = await imageResponse.json();
+              if (imageData.image && imageData.image.base64Data) {
+                console.log(`✅ Page ${i + 1} illustration generated successfully`);
+                return {
+                  pageIndex: i,
+                  imageBase64: imageData.image.base64Data
+                };
               }
+            } else {
+              console.log(`❌ Page ${i + 1} API error: ${imageResponse.status}`);
             }
-            
-            // Fallback to regular image generation if avatar editing fails or no avatar
-            if (!imageBase64) {
-              try {
-                console.log(`Generating regular illustration for page ${i + 1}...`);
-                // Use direct API call for image generation with better error handling
-                try {
-                  const imageResponse = await fetch('https://toolkit.rork.com/images/generate/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      prompt: `Children's book illustration page ${i + 1} of ${expectedPages}. ${baseCharacterPrompt} SCENE: "${page.text}". Style: ${characterInfo.style}, colorful, friendly, safe for children. Theme: ${request.theme}. IMPORTANT: Show the SAME character ${request.childName} as described above. NO OTHER CHILDREN in the scene. NO TEXT OR WRITING in the image. Focus on the scene while keeping the character identical to previous pages.`,
-                      size: '1024x1024'
-                    })
-                  });
-
-                  if (imageResponse.ok) {
-                    const imageData = await imageResponse.json();
-                    if (imageData.image && imageData.image.base64Data) {
-                      imageBase64 = imageData.image.base64Data;
-                      console.log(`Successfully generated regular illustration for page ${i + 1}`);
-                    }
-                  } else {
-                    const errorText = await imageResponse.text();
-                    console.log(`Image generation API returned ${imageResponse.status} for page ${i + 1}:`, errorText);
-                  }
-                } catch (apiError) {
-                  console.error(`API error for page ${i + 1}:`, apiError);
-                }
-              } catch (error) {
-                console.error(`Error with regular image generation for page ${i + 1}:`, error);
-              }
-            }
-            
-            // Add small delay between API calls to prevent rate limiting
-            if (i < totalPages - 1) {
-              await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-            
           } catch (error) {
-            console.error(`Critical error generating image for page ${i + 1}:`, error);
+            console.error(`❌ Page ${i + 1} generation error:`, error);
           }
           
-          // Add page to array with strict validation
-          const validImageBase64 = (() => {
-            if (!imageBase64 || typeof imageBase64 !== 'string') {
-              console.log(`Page ${i + 1}: No image data provided`);
-              return '';
+          return {
+            pageIndex: i,
+            imageBase64: ''
+          };
+        });
+        
+        // Wait for all images to complete with progress updates
+        console.log('Waiting for all illustrations to complete...');
+        const imageResults = await Promise.allSettled(imagePromises);
+        
+        // Process results and create pages
+        const imageMap = new Map<number, string>();
+        let successfulImages = 0;
+        
+        imageResults.forEach((result, index) => {
+          if (result.status === 'fulfilled' && result.value.imageBase64) {
+            const validImage = validateImageData(result.value.imageBase64, index + 1);
+            if (validImage) {
+              imageMap.set(result.value.pageIndex, validImage);
+              successfulImages++;
             }
-            const trimmed = imageBase64.trim();
-            if (trimmed === '' || trimmed.length < 10) {
-              console.log(`Page ${i + 1}: Image data too short (${trimmed.length} chars)`);
-              return '';
-            }
-            if (trimmed === 'undefined' || trimmed === 'null' || trimmed === 'false') {
-              console.log(`Page ${i + 1}: Image data is invalid literal value`);
-              return '';
-            }
-            if (trimmed.includes('undefined') || trimmed.includes('null') || trimmed.includes('error')) {
-              console.log(`Page ${i + 1}: Image data contains error indicators`);
-              return '';
-            }
-            if (trimmed === 'data:image/png;base64,' || 
-                trimmed === 'data:image/jpeg;base64,' || 
-                trimmed === 'data:image/jpg;base64,') {
-              console.log(`Page ${i + 1}: Image data is empty data URI`);
-              return '';
-            }
-            console.log(`Page ${i + 1}: Valid image data (${trimmed.length} chars)`);
-            return trimmed;
-          })();
-            
+          }
+        });
+        
+        console.log(`Generated ${successfulImages}/${totalPages} illustrations successfully`);
+        
+        // Create pages with images
+        for (let i = 0; i < totalPages; i++) {
+          const page = parsedStory.pages[i];
+          const imageBase64 = imageMap.get(i) || '';
+          
           pages.push({
             id: `page-${i}`,
             text: page.text,
-            imageBase64: validImageBase64
+            imageBase64: imageBase64
           });
-          
-          // Update progress
-          const progress = 40 + ((i + 1) / totalPages) * 45;
-          setGenerationProgress(progress);
         }
         
-        const pagesWithImages = pages.filter(p => p.imageBase64 && p.imageBase64.length > 10).length;
-        const pagesWithoutImages = pages.filter(p => !p.imageBase64 || p.imageBase64.length <= 10).length;
+        const pagesWithImages = pages.filter(p => p.imageBase64 && p.imageBase64.length > 50).length;
+        console.log(`✅ Story complete: ${pagesWithImages}/${totalPages} pages have illustrations`);
         
-        console.log(`Created ${pages.length} pages out of ${totalPages} expected pages`);
-        console.log('Pages with images:', pagesWithImages);
-        console.log('Pages without images:', pagesWithoutImages);
-        
-        // Log detailed page information
-        pages.forEach((page, index) => {
-          console.log(`Page ${index + 1}:`, {
-            hasText: !!page.text,
-            textLength: page.text?.length || 0,
-            hasImage: !!page.imageBase64,
-            imageLength: page.imageBase64?.length || 0
-          });
-        });
-        
-        // If no images were generated at all, log a warning but continue
-        if (pagesWithImages === 0 && request.includeIllustrations) {
-          console.warn('No illustrations were generated - story will be text-only');
+        // If less than 50% of images were generated, log a warning but continue
+        if (pagesWithImages < totalPages / 2 && request.includeIllustrations) {
+          console.warn(`Only ${pagesWithImages}/${totalPages} illustrations generated - some pages will be text-only`);
         }
         
         setGenerationProgress(85);

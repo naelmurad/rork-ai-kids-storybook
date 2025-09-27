@@ -396,44 +396,21 @@ export default function StoryReader({ story, onClose }: StoryReaderProps) {
           {story.pages.map((page, index) => {
             const raw = page.imageBase64 ?? '';
             
-            // More robust image validation
+            // Simplified and more lenient image validation
             const hasValidImage = (() => {
               if (!raw || typeof raw !== 'string') {
-                console.log(`Page ${index + 1}: No raw image data or not string`);
                 return false;
               }
               const trimmed = raw.trim();
               if (trimmed === '' || trimmed.length < 50) {
-                console.log(`Page ${index + 1}: Image data too short (${trimmed.length} chars)`);
                 return false;
               }
-              if (trimmed === 'undefined' || trimmed === 'null') {
-                console.log(`Page ${index + 1}: Image data is literal 'undefined' or 'null'`);
+              if (trimmed === 'undefined' || trimmed === 'null' || trimmed === 'false') {
                 return false;
               }
-              if (trimmed.includes('undefined') || trimmed.includes('null')) {
-                console.log(`Page ${index + 1}: Image data contains 'undefined' or 'null'`);
+              // More lenient validation - just check if it looks like valid data
+              if (trimmed.includes('undefined') || trimmed.includes('null') || trimmed.includes('error')) {
                 return false;
-              }
-              if (trimmed === 'data:image/png;base64,' || 
-                  trimmed === 'data:image/jpeg;base64,' || 
-                  trimmed === 'data:image/jpg;base64,') {
-                console.log(`Page ${index + 1}: Image data is empty data URI`);
-                return false;
-              }
-              // Additional validation for base64 content
-              if (trimmed.startsWith('data:image/')) {
-                const base64Part = trimmed.split(',')[1];
-                if (!base64Part || base64Part.length < 20) {
-                  console.log(`Page ${index + 1}: Data URI has no or insufficient base64 content`);
-                  return false;
-                }
-              } else {
-                // If it's just base64 without data URI prefix, check if it's valid
-                if (!/^[A-Za-z0-9+/]+=*$/.test(trimmed)) {
-                  console.log(`Page ${index + 1}: Invalid base64 format`);
-                  return false;
-                }
               }
               console.log(`Page ${index + 1}: Valid image data (${trimmed.length} chars)`);
               return true;
