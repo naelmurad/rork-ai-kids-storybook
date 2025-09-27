@@ -79,18 +79,24 @@ export default function DebugConsole() {
     };
   }, [addLog]);
 
-  // Auto-open logic with debouncing to prevent render-time state updates
+  // Auto-open logic with proper debouncing to prevent render-time state updates
   useEffect(() => {
     if (!autoOpenOnGenerate || visible || logs.length === 0) return;
     
     const latestLog = logs[logs.length - 1];
     if (/STORY STORE|STORY CREATION|Story generation|generateStory/i.test(latestLog.message)) {
-      // Use setTimeout to avoid setState during render
-      const timer = setTimeout(() => {
-        setVisible(true);
-      }, 100);
+      // Use requestAnimationFrame + setTimeout to ensure we're not in render cycle
+      let timerId: NodeJS.Timeout;
+      const rafId = requestAnimationFrame(() => {
+        timerId = setTimeout(() => {
+          setVisible(true);
+        }, 50);
+      });
       
-      return () => clearTimeout(timer);
+      return () => {
+        cancelAnimationFrame(rafId);
+        if (timerId) clearTimeout(timerId);
+      };
     }
   }, [logs, autoOpenOnGenerate, visible]);
 

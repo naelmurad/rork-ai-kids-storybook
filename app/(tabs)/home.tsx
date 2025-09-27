@@ -27,7 +27,7 @@ import PremiumUpgradeScreen from '@/components/PremiumUpgradeScreen';
 import StoryBanner from '@/components/StoryBanner';
 import BannerAd from '@/components/BannerAd';
 import { useAds } from '@/hooks/ad-store';
-import DebugConsole from '@/components/DebugConsole';
+
 
 export default function HomeScreen() {
   const { stories, isLoading, isGenerating, generationProgress, generateStory, generateTestStory } = useStories();
@@ -74,17 +74,22 @@ export default function HomeScreen() {
     
     if (activeModals.length > 1) {
       console.warn('Multiple modals active simultaneously:', activeModals);
-      // Close all except the most recent one
-      if (showError) {
-        // Error modal takes priority
-        setShowCreateModal(false);
-        setSelectedStory(null);
-        setShowPremiumUpgrade(false);
-      } else if (selectedStory) {
-        // Story reader takes priority over others
-        setShowCreateModal(false);
-        setShowPremiumUpgrade(false);
-      }
+      // Use setTimeout to avoid setState during render
+      const timer = setTimeout(() => {
+        // Close all except the most recent one
+        if (showError) {
+          // Error modal takes priority
+          setShowCreateModal(false);
+          setSelectedStory(null);
+          setShowPremiumUpgrade(false);
+        } else if (selectedStory) {
+          // Story reader takes priority over others
+          setShowCreateModal(false);
+          setShowPremiumUpgrade(false);
+        }
+      }, 0);
+      
+      return () => clearTimeout(timer);
     }
   }, [showCreateModal, selectedStory, showError, showPremiumUpgrade]);
   
@@ -1261,8 +1266,7 @@ export default function HomeScreen() {
         visible={showPremiumUpgrade}
         onClose={() => setShowPremiumUpgrade(false)}
       />
-      
-      <DebugConsole />
+
     </View>
   );
 }
