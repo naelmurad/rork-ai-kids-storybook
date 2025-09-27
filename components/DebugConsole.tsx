@@ -26,7 +26,6 @@ export default function DebugConsole() {
   const [visible, setVisible] = useState<boolean>(false);
   const [onlyStoryLogs, setOnlyStoryLogs] = useState<boolean>(true);
   const [autoOpenOnGenerate, setAutoOpenOnGenerate] = useState<boolean>(true);
-  const generationFlagRef = useRef<boolean>(false);
 
   const addLog = useCallback((level: LogLevel, args: unknown[]) => {
     try {
@@ -47,13 +46,8 @@ export default function DebugConsole() {
         if (next.length > MAX_LOGS) next.splice(0, next.length - MAX_LOGS);
         return next;
       });
-      if (autoOpenOnGenerate && !visible) {
-        if (/STORY STORE|STORY CREATION|Story generation|generateStory/i.test(message)) {
-          setVisible(true);
-        }
-      }
     } catch {}
-  }, [autoOpenOnGenerate, visible]);
+  }, []);
 
   useEffect(() => {
     if (originals.current) return;
@@ -84,6 +78,16 @@ export default function DebugConsole() {
       }
     };
   }, [addLog]);
+
+  // Auto-open logic moved to useEffect to prevent render-time state updates
+  useEffect(() => {
+    if (autoOpenOnGenerate && !visible && logs.length > 0) {
+      const latestLog = logs[logs.length - 1];
+      if (/STORY STORE|STORY CREATION|Story generation|generateStory/i.test(latestLog.message)) {
+        setVisible(true);
+      }
+    }
+  }, [logs, autoOpenOnGenerate, visible]);
 
   const filteredLogs = useMemo(() => {
     if (!onlyStoryLogs) return logs;
