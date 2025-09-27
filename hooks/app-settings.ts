@@ -733,12 +733,36 @@ export const [AppSettingsProvider, useAppSettings] = createContextHook(() => {
 
   const saveSettingsMutation = useMutation({
     mutationFn: async (settings: AppSettings) => {
-      if (!settings || typeof settings !== 'object') return settings;
-      await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-      return settings;
+      try {
+        if (!settings || typeof settings !== 'object') {
+          console.warn('saveSettingsMutation: Invalid settings object, returning as-is');
+          return settings;
+        }
+        
+        const serializedSettings = JSON.stringify(settings);
+        if (serializedSettings.length > 1024 * 1024) { // 1MB limit for settings
+          console.warn('saveSettingsMutation: Settings data too large, truncating profiles');
+          const truncatedSettings = {
+            ...settings,
+            profiles: settings.profiles?.slice(0, 5) || [] // Keep only 5 profiles max
+          };
+          await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(truncatedSettings));
+          return truncatedSettings;
+        }
+        
+        await AsyncStorage.setItem(SETTINGS_KEY, serializedSettings);
+        console.log('saveSettingsMutation: Successfully saved app settings');
+        return settings;
+      } catch (error) {
+        console.error('saveSettingsMutation: Failed to save settings:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['app_settings'] });
+    },
+    onError: (error) => {
+      console.error('saveSettingsMutation: Settings mutation failed:', error);
     }
   });
 

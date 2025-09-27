@@ -81,12 +81,33 @@ export const [StoryProvider, useStories] = createContextHook(() => {
 
   const saveStoriesMutation = useMutation({
     mutationFn: async (stories: Story[]) => {
-      if (!Array.isArray(stories)) return [];
-      await AsyncStorage.setItem(STORIES_KEY, JSON.stringify(stories));
-      return stories;
+      try {
+        if (!Array.isArray(stories)) {
+          console.warn('saveStoriesMutation: Invalid stories array, returning empty array');
+          return [];
+        }
+        
+        const serializedStories = JSON.stringify(stories);
+        if (serializedStories.length > 5 * 1024 * 1024) { // 5MB limit
+          console.warn('saveStoriesMutation: Stories data too large, truncating');
+          const truncatedStories = stories.slice(0, Math.floor(stories.length / 2));
+          await AsyncStorage.setItem(STORIES_KEY, JSON.stringify(truncatedStories));
+          return truncatedStories;
+        }
+        
+        await AsyncStorage.setItem(STORIES_KEY, serializedStories);
+        console.log(`saveStoriesMutation: Successfully saved ${stories.length} stories`);
+        return stories;
+      } catch (error) {
+        console.error('saveStoriesMutation: Failed to save stories:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stories'] });
+    },
+    onError: (error) => {
+      console.error('saveStoriesMutation: Mutation failed:', error);
     }
   });
 

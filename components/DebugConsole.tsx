@@ -79,22 +79,29 @@ export default function DebugConsole() {
     };
   }, [addLog]);
 
-  // Auto-open logic with proper debouncing to prevent render-time state updates
+  // Auto-open logic - track the last processed log to prevent duplicate opens
+  const lastProcessedLogRef = useRef<string | null>(null);
+  
   useEffect(() => {
     if (!autoOpenOnGenerate || visible || logs.length === 0) return;
     
     const latestLog = logs[logs.length - 1];
-    if (latestLog && /STORY STORE|STORY CREATION|Story generation|generateStory/i.test(latestLog.message)) {
-      // Use a more reliable approach to prevent setState during render
+    if (latestLog && 
+        latestLog.id !== lastProcessedLogRef.current &&
+        /STORY STORE|STORY CREATION|Story generation|generateStory/i.test(latestLog.message)) {
+      
+      lastProcessedLogRef.current = latestLog.id;
+      
+      // Use setTimeout to ensure we're not in a render cycle
       const timerId = setTimeout(() => {
         setVisible(true);
-      }, 100);
+      }, 0);
       
       return () => {
         clearTimeout(timerId);
       };
     }
-  }, [logs, autoOpenOnGenerate, visible]); // Include logs dependency
+  }, [logs, autoOpenOnGenerate, visible])
 
   const filteredLogs = useMemo(() => {
     if (!onlyStoryLogs) return logs;
